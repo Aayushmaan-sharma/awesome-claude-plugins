@@ -23,41 +23,48 @@
 }
 
 /* Notecase — study notes marketplace
-   One committed look: a black desk, white paper, one highlighter, one red pen.
-   Single theme by design — there is no light variant, so every colour is
-   painted explicitly and nothing is left to the host's ground. */
+   A black desk, white paper, and as little colour as the job needs. Actions
+   are bone on black; the one accent is a muted brass used at small sizes;
+   marker yellow appears only on the paper, where a highlighter belongs.
+   Single theme by design, so every colour is painted explicitly. */
 
 :root {
   color-scheme: dark;
 
   /* the desk */
   --paper: #000000;
-  --surface: #121212;
-  --sunken: #1e1e1c;
-  --ink: #f2f2ec;
-  --ink-2: #a9a99f;
-  --ink-3: #8b8b81;
-  --rule: #2c2c29;
-  --rule-soft: #232320;
-  --field-border: #70706a;
+  --surface: #131316;
+  --sunken: #1c1c20;
+  --ink: #ecebe7;
+  --ink-2: #a3a29c;
+  --ink-3: #87867f;
+  --rule: #2a2a2f;
+  --rule-soft: #202024;
+  --field-border: #6f6f74;
+
+  /* actions and the one accent */
+  --action: #ecebe7;
+  --action-hover: #ffffff;
+  --on-action: #121215;
+  --accent: #c19a4f;
+  --accent-soft: rgba(193, 154, 79, 0.16);
 
   /* the paper: covers, preview pages, cart thumbnails */
-  --sheet: #ffffff;
-  --sheet-ink: #14170f;
-  --sheet-ink-2: #5a5f52;
-  --sheet-line: #c9ccbe;
-  --sheet-rule: #dcdfd2;
-  --sheet-margin: #cc4a3f;
+  --sheet: #fbfbf8;
+  --sheet-ink: #17181a;
+  --sheet-ink-2: #5c5f5c;
+  --sheet-line: #cfd0ca;
+  --sheet-edge: #8e908a;
+  --sheet-rule: #e4e5de;
+  --sheet-margin: #bf6459;
+  --sheet-mark: #efdd8b;
 
-  /* the pens */
-  --mark: #d8e83f;
-  --mark-soft: rgba(216, 232, 63, 0.42);
-  --on-mark: #101208;
-  --pen: #ff8175;
-  --tick: #5cc891;
+  /* state */
+  --pen: #e8776c;
+  --tick: #5fbe8f;
 
-  --shadow: 0 1px 0 rgba(0, 0, 0, 0.6), 0 8px 22px -14px rgba(0, 0, 0, 1);
-  --shadow-lift: 0 2px 0 rgba(0, 0, 0, 0.7), 0 18px 34px -18px rgba(0, 0, 0, 1);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-lift: 0 10px 30px -18px rgba(0, 0, 0, 1);
 
   --display: "Familjen Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -65,11 +72,11 @@
 
   --step-0: 0.9375rem;
   --step-1: 1.0625rem;
-  --step-2: 1.3125rem;
-  --step-3: 1.75rem;
-  --step-4: clamp(2rem, 1.4rem + 2.4vw, 2.9rem);
+  --step-2: 1.25rem;
+  --step-3: 1.5rem;
+  --step-4: clamp(1.75rem, 1.25rem + 1.9vw, 2.4rem);
   --gap: 1rem;
-  --radius: 8px;
+  --radius: 6px;
   --shell: 1220px;
 }
 
@@ -89,11 +96,11 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--display);
-  font-weight: 700;
-  line-height: 1.12;
+  font-weight: 600;
+  line-height: 1.15;
   text-wrap: balance;
   margin: 0;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.008em;
 }
 
 p { margin: 0; }
@@ -125,7 +132,7 @@ a { color: inherit; }
 }
 
 .mark {
-  background-image: linear-gradient(transparent 58%, var(--mark-soft) 58%, var(--mark-soft) 94%, transparent 94%);
+  box-shadow: inset 0 -0.09em 0 var(--accent);
 }
 
 .sr-only {
@@ -146,7 +153,7 @@ a { color: inherit; }
   font-weight: 600;
   line-height: 1;
   padding: 0.68rem 1rem;
-  border: 1px solid var(--ink);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
@@ -154,13 +161,13 @@ a { color: inherit; }
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease;
 }
-.btn:hover { transform: translateY(-1px); box-shadow: 0 3px 0 var(--ink); }
-.btn:active { transform: translateY(0); box-shadow: none; }
-.btn--primary { background: var(--mark); border-color: var(--ink); color: var(--on-mark); }
+.btn:hover { background: var(--sunken); border-color: var(--ink-3); }
+.btn--primary { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.btn--primary:hover { background: var(--action-hover); border-color: var(--action-hover); color: var(--on-action); }
 .btn--ghost { border-color: var(--field-border); background: transparent; }
-.btn--ghost:hover { box-shadow: 0 2px 0 var(--field-border); }
+.btn--ghost:hover { background: var(--surface); border-color: var(--ink-3); }
 .btn--wide { width: 100%; justify-content: center; }
 .btn--sm { padding: 0.45rem 0.7rem; font-size: 0.8125rem; }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
@@ -227,8 +234,7 @@ select {
 }
 .brand__dot {
   width: 0.5rem; height: 0.5rem;
-  background: var(--mark);
-  border: 1px solid var(--ink);
+  background: var(--accent);
   border-radius: 2px;
   transform: translateY(-1px);
 }
@@ -256,7 +262,7 @@ select {
   white-space: nowrap;
 }
 .navlink:hover { color: var(--ink); background: var(--sunken); }
-.navlink[aria-current="page"] { color: var(--ink); background: var(--mark-soft); }
+.navlink[aria-current="page"] { color: var(--ink); box-shadow: inset 0 -2px 0 var(--accent); border-radius: 0; }
 .cartbtn { position: relative; }
 .cartbtn__count {
   font-family: var(--mono);
@@ -299,7 +305,7 @@ select {
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid var(--ink);
+  border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--surface);
   overflow: hidden;
@@ -325,7 +331,7 @@ select {
   align-items: flex-start;
   font-size: 0.8125rem;
   color: var(--ink-2);
-  border: 1px dashed var(--rule);
+  border: 1px solid var(--rule);
   border-radius: var(--radius);
   padding: 0.6rem 0.75rem;
   margin-top: 1rem;
@@ -405,9 +411,8 @@ select {
   transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
 }
 .card:hover {
-  border-color: var(--ink);
+  border-color: var(--ink-3);
   box-shadow: var(--shadow-lift);
-  transform: translateY(-2px);
 }
 .card__cover {
   position: relative;
@@ -466,12 +471,11 @@ select {
   font-family: var(--mono);
   font-size: 0.6875rem;
   font-weight: 600;
-  padding: 0.2rem 0.45rem;
-  border: 1px solid var(--sheet-ink);
-  border-radius: 4px;
-  background: var(--mark);
-  color: var(--on-mark);
-  transform: rotate(2.5deg);
+  padding: 0.18rem 0.4rem;
+  border: 1px solid var(--sheet-edge);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--sheet-ink-2);
 }
 .card__body {
   display: flex;
@@ -492,12 +496,12 @@ select {
   padding: 0;
   text-align: left;
   cursor: pointer;
-  background-image: linear-gradient(transparent 62%, var(--mark-soft) 62%, var(--mark-soft) 96%, transparent 96%);
-  background-size: 0% 100%;
-  background-repeat: no-repeat;
-  transition: background-size 0.28s ease;
+  text-decoration-color: transparent;
+  text-decoration-line: underline;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.16s ease;
 }
-.card:hover .card__title button { background-size: 100% 100%; }
+.card:hover .card__title button { text-decoration-color: var(--ink-3); }
 .card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -540,7 +544,7 @@ select {
   font-size: 0.75rem;
   color: var(--ink-2);
 }
-.rating__star { color: var(--pen); font-size: 0.8125rem; line-height: 1; }
+.rating__star { color: var(--accent); font-size: 0.8125rem; line-height: 1; }
 .owned {
   display: inline-flex;
   align-items: center;
@@ -563,7 +567,6 @@ select {
   background: var(--sunken);
   color: var(--ink-2);
 }
-.tag--new { background: var(--mark); color: var(--on-mark); }
 .tag--mine { background: transparent; border: 1px dashed var(--rule); }
 
 .empty {
@@ -690,7 +693,7 @@ select {
 .page__lines { display: grid; gap: 7px; }
 .page__line { height: 4px; border-radius: 2px; background: var(--sheet-line); }
 .page__line--head { height: 7px; background: var(--sheet-ink-2); width: 62%; margin-bottom: 3px; }
-.page__line--mark { background: var(--mark); }
+.page__line--mark { background: var(--sheet-mark); }
 .page--locked .page__lines { filter: blur(2.6px); opacity: 0.75; }
 .page__lock {
   position: absolute;
@@ -762,7 +765,7 @@ select {
 .buypanel {
   position: sticky;
   top: calc(var(--topbar-h, 57px) + 1.2rem);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--rule);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -827,8 +830,8 @@ select {
   display: flex;
   flex-direction: column;
   background: var(--paper);
-  border-left: 1px solid var(--ink);
-  box-shadow: -20px 0 40px -30px rgba(0, 0, 0, 0.8);
+  border-left: 1px solid var(--rule);
+  box-shadow: -24px 0 50px -30px rgba(0, 0, 0, 1);
   animation: slide-in 0.22s ease-out;
 }
 @keyframes slide-in { from { transform: translateX(18px); } to { transform: none; } }
@@ -917,9 +920,9 @@ select {
 .modal__card {
   width: min(520px, 100%);
   background: var(--paper);
-  border: 1px solid var(--ink);
+  border: 1px solid var(--rule);
   border-radius: var(--radius);
-  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 1);
   overflow: hidden;
 }
 .modal__head {
@@ -1142,7 +1145,7 @@ body.is-locked { overflow: hidden; }
   color: var(--ink-3);
   font-style: italic;
 }
-.rating--none { color: var(--ink-3); font-family: var(--mono); font-size: 0.75rem; }
+.rating--none { color: var(--ink-3); font-size: 0.75rem; }
 .rating__count { color: var(--ink-3); }
 
 /* ---------- consent, errors, review form ---------- */
@@ -1226,7 +1229,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   font-size: 0.875rem;
   background: var(--surface);
 }
-.star input:checked + span { background: var(--mark); border-color: var(--ink); color: var(--on-mark); font-weight: 600; }
+.star input:checked + span { background: var(--action); border-color: var(--action); color: var(--on-action); font-weight: 600; }
 .star input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 /* ---------- policy pages ---------- */
@@ -1255,8 +1258,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .policy__nav a[aria-current="page"] {
   color: var(--ink);
   font-weight: 600;
-  border-left-color: var(--ink);
-  background: var(--mark-soft);
+  border-left-color: var(--accent);
+  background: var(--sunken);
 }
 
 .prose { max-width: 68ch; display: grid; gap: 2rem; }

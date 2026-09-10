@@ -44,6 +44,7 @@ const ratio = (a, b) => {
 };
 
 const PAIRS = [
+  // the desk
   ["ink", "paper", 4.5, "body text on the page"],
   ["ink", "surface", 4.5, "body text on a card"],
   ["ink", "sunken", 4.5, "text on a tag or sunken panel"],
@@ -52,24 +53,29 @@ const PAIRS = [
   ["ink-2", "sunken", 4.5, "tag text"],
   ["ink-3", "paper", 4.5, "hints and page numbers on the page"],
   ["ink-3", "surface", 4.5, "hints and page numbers on a card"],
-  ["on-mark", "mark", 4.5, "primary button label"],
-  ["paper", "ink", 4.5, "toast and pressed chip"],
+  ["accent", "paper", 4.5, "accent marks on the page"],
+  ["accent", "surface", 4.5, "accent marks on a card"],
   ["tick", "surface", 4.5, "success text on a card"],
   ["tick", "paper", 4.5, "success text on the page"],
   ["pen", "surface", 4.5, "error text on a card"],
   ["pen", "paper", 4.5, "error text on the page"],
+
+  // actions
+  ["on-action", "action", 4.5, "primary button label"],
+  ["on-action", "action-hover", 4.5, "primary button label on hover"],
+  ["paper", "ink", 4.5, "toast and pressed chip"],
+  ["action", "paper", 3, "primary button edge against the page"],
+  ["action", "surface", 3, "primary button edge against a card"],
   ["field-border", "paper", 3, "input and chip border on the page"],
   ["field-border", "surface", 3, "input border on a card"],
-  ["ink", "paper", 3, "primary button edge against the page"],
-  ["ink", "surface", 3, "primary button edge against a card"],
 
   // the white sheets: covers, sample pages, cart thumbnails
   ["sheet-ink", "sheet", 4.5, "course code stamped on a cover"],
   ["sheet-ink-2", "sheet", 4.5, "institution, format and page numbers on paper"],
-  ["on-mark", "mark", 4.5, "highlighter over text on paper"],
-  ["sheet-ink", "mark", 4.5, "grade stamp on a cover"],
+  ["sheet-ink", "sheet-mark", 4.5, "text under a marker stroke on paper"],
   ["sheet", "paper", 3, "a cover button's edge against the page"],
   ["sheet-ink", "sheet-line", 3, "ruled text bars against the page they sit on"],
+  ["sheet-edge", "sheet", 3, "the grade chip's border on a cover"],
 ];
 
 const quiet = process.argv.includes("--quiet");
