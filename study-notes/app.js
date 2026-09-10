@@ -1,15 +1,41 @@
 /* Notecase — a storefront for buying and selling study notes.
  *
- * No build step, no framework. State lives in localStorage so the shop
- * works from a file:// URL, a static host, or a published artifact.
+ * No build step, no framework, no dependencies, and no network requests:
+ * the fonts are served from this directory and there is no analytics,
+ * advertising or third-party embed anywhere in the page. State lives in
+ * localStorage, so the shop runs from file://, a static host, or a
+ * published artifact.
  *
  * Payments are NOT connected. Checkout records an order locally and
- * unlocks the download; see README.md for wiring a real payment
- * provider before taking money from anyone.
+ * unlocks the download. See README.md before taking money from anyone.
  */
 
 (() => {
   "use strict";
+
+  /* Fill these in before you trade. Anything left blank shows up as a
+   * visible gap on the policy pages instead of an invented detail — a
+   * trader has to identify itself under the Companies Act and the
+   * E-Commerce Regulations, and a plausible-looking placeholder is worse
+   * than an obvious one. */
+  const SITE = {
+    legalName: "",
+    companyNumber: "",
+    vatNumber: "",
+    address: "",
+    contactEmail: "",
+    country: "England and Wales",
+    governingLaw: "England and Wales",
+    policiesUpdated: "September 2026",
+  };
+
+  const SITE_FIELDS = {
+    legalName: "your registered company or trading name",
+    companyNumber: "your company number",
+    vatNumber: "your VAT number",
+    address: "your registered address",
+    contactEmail: "your contact email address",
+  };
 
   const CONFIG = {
     shopName: "Notecase",
@@ -25,17 +51,13 @@
   /* ---------------------------------------------------------------- utils */
 
   const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   const money = (pence) =>
     new Intl.NumberFormat(CONFIG.locale, { style: "currency", currency: CONFIG.currency }).format(pence / 100);
   const esc = (value) =>
     String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const initials = (name) =>
-    String(name || "?")
-      .split(/\s+/)
-      .slice(0, 2)
-      .map((w) => w[0] || "")
-      .join("")
-      .toUpperCase();
+    String(name || "?").split(/\s+/).slice(0, 2).map((w) => w[0] || "").join("").toUpperCase();
 
   function seeded(seed) {
     let h = 2166136261;
@@ -54,7 +76,10 @@
 
   /* ------------------------------------------------------------- persistence */
 
-  const blank = { cart: [], orders: [], listings: [], promo: null, buyer: null };
+  /* Deliberately not stored: name, address, institution, or anything else
+   * a download does not need. The email is asked for at each checkout and
+   * not kept in the browser afterwards. */
+  const blank = { cart: [], orders: [], listings: [], reviews: [], promo: null };
 
   function readStore() {
     try {
@@ -67,9 +92,12 @@
 
   function writeStore() {
     try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({ cart: state.cart, orders: state.orders, listings: state.listings, promo: state.promo, buyer: state.buyer }));
+      localStorage.setItem(
+        STORE_KEY,
+        JSON.stringify({ cart: state.cart, orders: state.orders, listings: state.listings, reviews: state.reviews, promo: state.promo }),
+      );
     } catch {
-      /* private browsing, storage disabled — the session still works */
+      /* private browsing or storage disabled — the session still works */
     }
   }
 
@@ -78,9 +106,10 @@
     query: "",
     subject: "all",
     level: "all",
-    sort: "popular",
+    sort: "newest",
     route: { name: "browse", id: null },
     overlay: null, // "cart" | "checkout" | null
+    lastFocus: null,
   };
 
   /* ---------------------------------------------------------------- catalogue */
@@ -102,9 +131,19 @@
   const inCart = (id) => state.cart.includes(id);
   const unitLabel = (n) => (n.cards ? `${n.cards} cards` : `${n.pages} pages`);
 
+  /* Ratings are computed from reviews left by people who actually bought
+   * the pack. Nothing is seeded, so a new shop honestly shows none. */
+  const reviewsFor = (id) => state.reviews.filter((r) => r.noteId === id).sort((a, b) => b.at - a.at);
+  function ratingFor(id) {
+    const list = reviewsFor(id);
+    if (!list.length) return { avg: 0, count: 0 };
+    return { avg: list.reduce((s, r) => s + r.rating, 0) / list.length, count: list.length };
+  }
+  const hasReviewed = (id) => state.reviews.some((r) => r.noteId === id);
+
   function filtered() {
     const q = state.query.trim().toLowerCase();
-    let list = allNotes().filter((n) => {
+    const list = allNotes().filter((n) => {
       if (state.subject !== "all" && n.subject !== state.subject) return false;
       if (state.level !== "all" && n.level !== state.level) return false;
       if (!q) return true;
@@ -114,13 +153,14 @@
         .includes(q);
     });
     const by = {
-      popular: (a, b) => b.ratingCount - a.ratingCount,
-      rating: (a, b) => b.rating - a.rating,
+      newest: null, // catalogue order: listings published here sit at the front
+      rating: (a, b) => ratingFor(b.id).avg - ratingFor(a.id).avg,
+      reviewed: (a, b) => ratingFor(b.id).count - ratingFor(a.id).count,
       "price-asc": (a, b) => a.price - b.price,
       "price-desc": (a, b) => b.price - a.price,
-      newest: (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
     };
-    return list.sort(by[state.sort] || by.popular);
+    const cmp = by[state.sort];
+    return cmp ? list.sort(cmp) : list;
   }
 
   /* -------------------------------------------------------------- cart maths */
@@ -135,13 +175,38 @@
     return { items, subtotal, discount, promo, total: subtotal - discount };
   }
 
+  /* ------------------------------------------------------- business details */
+
+  const missingSiteFields = () => Object.keys(SITE_FIELDS).filter((k) => !String(SITE[k] || "").trim());
+
+  function siteValue(key) {
+    const value = String(SITE[key] || "").trim();
+    if (value) return esc(value);
+    return `<span class="todo"><span class="sr-only">Placeholder — the site owner still has to add </span>${esc(SITE_FIELDS[key] || key)}</span>`;
+  }
+
+  function fillTokens(text) {
+    const direct = {
+      name: esc(CONFIG.shopName),
+      country: esc(SITE.country),
+      governingLaw: esc(SITE.governingLaw),
+      feePct: String(CONFIG.platformFeePct),
+    };
+    return esc(text).replace(/\{\{(\w+)\}\}/g, (whole, key) =>
+      key in direct ? direct[key] : key in SITE_FIELDS ? siteValue(key) : whole,
+    );
+  }
+
   /* ------------------------------------------------------------ capabilities */
 
   let downloads = null;
   if (typeof window !== "undefined" && window.claude && typeof window.claude.use === "function") {
-    window.claude.use("downloads").then((cap) => {
-      downloads = cap;
-    }).catch(() => {});
+    window.claude
+      .use("downloads")
+      .then((cap) => {
+        downloads = cap;
+      })
+      .catch(() => {});
   }
 
   function packFor(note, order) {
@@ -150,7 +215,7 @@
       "",
       `${note.course} · ${note.institution} · ${note.level}`,
       `${unitLabel(note)} · ${note.format} · updated ${note.updated}`,
-      `Written by ${note.seller.name}${note.seller.grade ? ` (${note.seller.grade})` : ""}`,
+      `Written by ${note.seller.name}`,
       "",
       `Order ${order.ref} · ${new Date(order.date).toLocaleDateString(CONFIG.locale)}`,
       "Personal study licence: yours to read, print and annotate. Not for resale or redistribution.",
@@ -199,6 +264,7 @@
   /* ------------------------------------------------------------------ chrome */
 
   function mountChrome() {
+    document.documentElement.lang = document.documentElement.lang || "en";
     let root = document.getElementById("app");
     if (!root) {
       root = document.createElement("div");
@@ -206,6 +272,7 @@
       document.body.appendChild(root);
     }
     root.innerHTML = `
+      <a class="skiplink" href="#view">Skip to main content</a>
       <header class="topbar">
         <div class="shell topbar__inner">
           <a class="brand" href="#/" data-nav>
@@ -221,37 +288,75 @@
             <a class="navlink" href="#/sell" data-nav data-route="sell">Sell notes</a>
             <a class="navlink" href="#/library" data-nav data-route="library">Library</a>
             <a class="navlink" href="#/dashboard" data-nav data-route="dashboard">Sales</a>
-            <button class="btn btn--sm cartbtn" data-action="open-cart" type="button">
-              Cart <span class="cartbtn__count" id="cart-count">0</span>
+            <button class="btn btn--sm cartbtn" data-action="open-cart" type="button" id="cart-button" aria-expanded="false">
+              Cart <span class="cartbtn__count" id="cart-count" aria-hidden="true">0</span>
+              <span class="sr-only" id="cart-count-text">, empty</span>
             </button>
           </nav>
         </div>
       </header>
-      <main id="view"></main>
-      <footer class="footer">
-        <div class="shell footer__inner">
-          <p><strong>${esc(CONFIG.shopName)}</strong> — a storefront template for selling study notes. Sample catalogue; payments are not connected.</p>
-          <p>Notes are study aids. Don't submit anyone else's work as your own.</p>
-        </div>
-      </footer>
+      <main id="view" tabindex="-1"></main>
+      ${footerMarkup()}
       <div id="overlay"></div>
-      <div id="toast-host" aria-live="polite"></div>`;
+      <div id="toast-host" role="status" aria-live="polite"></div>`;
+
+    measureChrome();
+    window.addEventListener("resize", measureChrome);
 
     $("#q").addEventListener("input", (e) => {
       state.query = e.target.value;
-      if (state.route.name !== "browse") {
-        location.hash = "#/";
-      } else {
-        renderView();
-      }
+      if (state.route.name !== "browse") location.hash = "#/";
+      else renderView();
     });
+  }
+
+  /* Sticky offsets follow the real height of the bar, which changes when the
+   * nav wraps on a narrow screen. */
+  function measureChrome() {
+    const bar = $(".topbar");
+    if (bar) document.documentElement.style.setProperty("--topbar-h", `${bar.offsetHeight}px`);
+  }
+
+  function footerMarkup() {
+    return `
+      <footer class="footer">
+        <div class="shell footer__grid">
+          <div>
+            <p class="footer__brand">${esc(CONFIG.shopName)}</p>
+            <p>A marketplace for student-written study notes. Sellers keep ${100 - CONFIG.platformFeePct}% of each sale.</p>
+            <p class="footer__legal">
+              ${siteValue("legalName")} · Company number ${siteValue("companyNumber")} · VAT ${siteValue("vatNumber")}<br>
+              ${siteValue("address")}<br>
+              ${siteValue("contactEmail")}
+            </p>
+          </div>
+          <nav aria-label="Policies">
+            <p class="footer__head">Policies</p>
+            <ul class="footer__links">
+              ${POLICY_ORDER.map((slug) => `<li><a href="#/policy/${slug}" data-nav>${esc(POLICIES[slug].nav)}</a></li>`).join("")}
+            </ul>
+          </nav>
+          <div>
+            <p class="footer__head">Good to know</p>
+            <ul class="footer__notes">
+              <li>No cookies, no analytics, no third-party requests.</li>
+              <li>Notes are a study aid. Don't submit anyone else's work as your own.</li>
+              <li>Sample catalogue; payments are not connected.</li>
+            </ul>
+          </div>
+        </div>
+      </footer>`;
   }
 
   function syncChrome() {
     const count = state.cart.length;
     const badge = $("#cart-count");
     if (badge) badge.textContent = String(count);
-    document.querySelectorAll("[data-route]").forEach((el) => {
+    const badgeText = $("#cart-count-text");
+    if (badgeText) badgeText.textContent = count === 0 ? ", empty" : `, ${count} ${count === 1 ? "pack" : "packs"}`;
+    const cartBtn = $("#cart-button");
+    if (cartBtn) cartBtn.setAttribute("aria-expanded", String(state.overlay === "cart"));
+    $$("[data-route]").forEach((el) => {
       if (el.dataset.route === state.route.name) el.setAttribute("aria-current", "page");
       else el.removeAttribute("aria-current");
     });
@@ -264,26 +369,29 @@
     <span class="card__code mono">${esc(note.course)}</span>
     <span class="card__inst">${esc(note.institution)}</span>
     <span class="card__fmt">${esc(note.format)} · ${esc(unitLabel(note))}</span>
-    ${note.seller?.grade ? `<span class="card__grade">${esc(note.seller.grade)}</span>` : ""}`;
+    ${
+      note.seller?.grade
+        ? `<span class="card__grade"><span class="sr-only">Result the seller says they earned: </span>${esc(note.seller.grade)}</span>`
+        : ""
+    }`;
 
-  const ratingMarkup = (note) =>
-    note.ratingCount
-      ? `<span class="rating"><span class="rating__star" aria-hidden="true">★</span>${note.rating.toFixed(1)}<span style="color:var(--ink-3)">(${note.ratingCount})</span></span>`
-      : `<span class="rating" style="color:var(--ink-3)">No reviews yet</span>`;
+  function ratingMarkup(note) {
+    const { avg, count } = ratingFor(note.id);
+    if (!count) return `<span class="rating rating--none">No reviews yet</span>`;
+    return `<span class="rating"><span class="rating__star" aria-hidden="true">★</span>${avg.toFixed(1)}<span class="rating__count">from ${count} ${count === 1 ? "review" : "reviews"}</span></span>`;
+  }
 
   function cardMarkup(note) {
-    const mine = Boolean(note.mine);
     return `
       <article class="card" style="--tint:${tintOf(note.subject)}">
-        <button class="card__cover" type="button" data-action="open-note" data-id="${esc(note.id)}" aria-label="View ${esc(note.title)}">
+        <button class="card__cover" type="button" data-action="open-note" data-id="${esc(note.id)}" aria-label="View listing: ${esc(note.title)}">
           ${coverMarkup(note)}
         </button>
         <div class="card__body">
-          <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+          <div class="card__tags">
             <span class="tag">${esc(subjectName(note.subject))}</span>
             <span class="tag">${esc(note.level)}</span>
-            ${mine ? '<span class="tag tag--mine">Your listing</span>' : ""}
-            ${note.isNew ? '<span class="tag tag--new">New</span>' : ""}
+            ${note.mine ? '<span class="tag tag--mine">Your listing</span>' : ""}
           </div>
           <h3 class="card__title"><button type="button" data-action="open-note" data-id="${esc(note.id)}">${esc(note.title)}</button></h3>
           <p class="card__meta">
@@ -291,7 +399,7 @@
           </p>
           ${ratingMarkup(note)}
           <div class="card__foot">
-            <p class="price">${money(note.price)}${note.listPrice && note.listPrice > note.price ? `<span class="price--was">${money(note.listPrice)}</span>` : ""}</p>
+            <p class="price">${money(note.price)}</p>
             ${cartButton(note, "btn--sm")}
           </div>
         </div>
@@ -301,8 +409,8 @@
   function cartButton(note, extra = "") {
     if (owns(note.id)) return `<span class="owned"><span aria-hidden="true">✓</span> In library</span>`;
     if (inCart(note.id))
-      return `<button class="btn ${extra} btn--ghost" type="button" data-action="open-cart">In cart</button>`;
-    return `<button class="btn ${extra} btn--primary" type="button" data-action="add" data-id="${esc(note.id)}">Add to cart</button>`;
+      return `<button class="btn ${extra} btn--ghost" type="button" data-action="open-cart">In cart — view</button>`;
+    return `<button class="btn ${extra} btn--primary" type="button" data-action="add" data-id="${esc(note.id)}" aria-label="Add ${esc(note.title)} to cart">Add to cart</button>`;
   }
 
   /* ------------------------------------------------------------- browse view */
@@ -310,8 +418,8 @@
   function browseView() {
     const notes = filtered();
     const total = allNotes().length;
-    const avg = (allNotes().reduce((s, n) => s + (n.rating || 0), 0) / total).toFixed(2);
     const subjectsUsed = new Set(allNotes().map((n) => n.subject)).size;
+    const levelsUsed = new Set(allNotes().map((n) => n.level)).size;
 
     const chips = [{ id: "all", name: "All subjects" }, ...SUBJECTS]
       .map(
@@ -324,19 +432,19 @@
       <section class="band">
         <div class="shell band__inner">
           <div>
-            <p class="eyebrow">Notes that already earned the grade</p>
+            <p class="eyebrow">Student-written study notes</p>
             <h1>Sell the notes you <span class="mark">already wrote</span>.</h1>
             <p class="band__lede">A storefront for lecture notes, essay banks, case grids and flashcard decks. Sellers keep ${100 - CONFIG.platformFeePct}% of every sale; buyers get the file the moment they check out.</p>
             <div class="band__actions">
               <a class="btn btn--primary" href="#/sell" data-nav>List your notes</a>
-              <a class="btn btn--ghost" href="#/library" data-nav>Your library</a>
+              <a class="btn btn--ghost" href="#/library" data-nav>Go to your library</a>
             </div>
           </div>
           <div>
             <div class="stats">
               <div class="stat"><p class="stat__num">${total}</p><p class="stat__label">Note packs listed</p></div>
               <div class="stat"><p class="stat__num">${subjectsUsed}</p><p class="stat__label">Subjects covered</p></div>
-              <div class="stat"><p class="stat__num">${avg}</p><p class="stat__label">Average rating</p></div>
+              <div class="stat"><p class="stat__num">${levelsUsed}</p><p class="stat__label">Levels covered</p></div>
             </div>
             <div class="notice">
               <span aria-hidden="true" class="mono">i</span>
@@ -346,20 +454,20 @@
         </div>
       </section>
 
-      <section class="filters">
+      <section class="filters" aria-label="Filter and sort">
         <div class="shell filters__inner">
           <div class="chips" role="group" aria-label="Filter by subject">${chips}</div>
           <div class="filters__right">
-            <label class="sr-only" for="level">Level</label>
+            <label class="sr-only" for="level">Filter by level</label>
             <select id="level" data-action="level">
               <option value="all"${state.level === "all" ? " selected" : ""}>Any level</option>
               ${LEVELS.map((l) => `<option value="${esc(l)}"${state.level === l ? " selected" : ""}>${esc(l)}</option>`).join("")}
             </select>
-            <label class="sr-only" for="sort">Sort</label>
+            <label class="sr-only" for="sort">Sort listings</label>
             <select id="sort" data-action="sort">
-              <option value="popular"${state.sort === "popular" ? " selected" : ""}>Most reviewed</option>
+              <option value="newest"${state.sort === "newest" ? " selected" : ""}>Newest first</option>
               <option value="rating"${state.sort === "rating" ? " selected" : ""}>Highest rated</option>
-              <option value="newest"${state.sort === "newest" ? " selected" : ""}>Newest</option>
+              <option value="reviewed"${state.sort === "reviewed" ? " selected" : ""}>Most reviewed</option>
               <option value="price-asc"${state.sort === "price-asc" ? " selected" : ""}>Price: low to high</option>
               <option value="price-desc"${state.sort === "price-desc" ? " selected" : ""}>Price: high to low</option>
             </select>
@@ -369,7 +477,7 @@
 
       <div class="shell">
         <div class="resultline">
-          <h2 style="font-size:var(--step-2)">${state.subject === "all" ? "All notes" : esc(subjectName(state.subject))}</h2>
+          <h2>${state.subject === "all" ? "All notes" : esc(subjectName(state.subject))}</h2>
           <p class="resultline__count">${notes.length} of ${total}${state.query ? ` matching “${esc(state.query)}”` : ""}</p>
         </div>
         <div class="grid">
@@ -379,7 +487,7 @@
               : `<div class="empty">
                    <h3>Nothing matches that yet</h3>
                    <p>Try a broader subject, or clear the search. If you wrote these notes, list them yourself.</p>
-                   <p style="margin-top:1rem"><a class="btn btn--primary" href="#/sell" data-nav>List your notes</a></p>
+                   <p class="empty__action"><a class="btn btn--primary" href="#/sell" data-nav>List your notes</a></p>
                  </div>`
           }
         </div>
@@ -402,30 +510,83 @@
           <div class="page${locked ? " page--locked" : ""}">
             <span class="page__margin" aria-hidden="true"></span>
             <div class="page__lines" aria-hidden="true">${lines}</div>
-            ${
-              locked
-                ? `<div class="page__lock"><span>Locked</span><span>${esc(unitLabel(note))} unlock<br>after purchase</span></div>`
-                : ""
-            }
-            <span class="page__num">${n}</span>
+            ${locked ? `<div class="page__lock"><span>Locked</span><span>The full ${esc(unitLabel(note))} unlock after purchase</span></div>` : ""}
+            <span class="page__num"><span class="sr-only">Sample page </span>${n}</span>
           </div>`;
       })
       .join("");
   }
 
+  function reviewSection(note) {
+    const list = reviewsFor(note.id);
+    const { avg, count } = ratingFor(note.id);
+    const canReview = owns(note.id) && !hasReviewed(note.id);
+
+    const form = canReview
+      ? `<form class="reviewform" id="review-form" novalidate>
+           <h4>Review this pack</h4>
+           <p class="reviewform__note">You bought this one, so your review will be marked as a verified purchase.</p>
+           <fieldset class="stars">
+             <legend>Your rating</legend>
+             ${[1, 2, 3, 4, 5]
+               .map(
+                 (n) => `<label class="star"><input type="radio" name="rating" value="${n}" required><span>${n}<span class="sr-only"> out of 5</span></span></label>`,
+               )
+               .join("")}
+           </fieldset>
+           <div class="field">
+             <label for="review-text">What should the next buyer know?</label>
+             <textarea id="review-text" name="text" rows="3" required aria-describedby="review-error"></textarea>
+           </div>
+           <p class="formerror" id="review-error" role="alert" hidden></p>
+           <button class="btn btn--primary" type="submit" data-id="${esc(note.id)}">Publish review</button>
+         </form>`
+      : owns(note.id)
+        ? `<p class="reviews__meta">You've reviewed this pack. Thanks.</p>`
+        : `<p class="reviews__meta">Only people who bought this pack can review it.</p>`;
+
+    return `
+      <section class="section" aria-labelledby="reviews-head">
+        <h3 id="reviews-head">Reviews ${count ? `<span class="section__aside">${avg.toFixed(1)} average from ${count} verified ${count === 1 ? "purchase" : "purchases"}</span>` : ""}</h3>
+        ${
+          list.length
+            ? `<div class="reviews">
+                 ${list
+                   .map(
+                     (r) => `
+                   <article class="review">
+                     <div class="avatar" aria-hidden="true">${esc(initials(r.by))}</div>
+                     <div>
+                       <div class="review__head">
+                         <span class="review__name">${esc(r.by)}</span>
+                         <span class="rating"><span class="rating__star" aria-hidden="true">★</span>${r.rating}<span class="sr-only"> out of 5</span></span>
+                         <span class="verified"><span aria-hidden="true">✓</span> Verified purchase</span>
+                         <span class="review__when">${new Date(r.at).toLocaleDateString(CONFIG.locale)}</span>
+                       </div>
+                       <p>${esc(r.text)}</p>
+                     </div>
+                   </article>`,
+                   )
+                   .join("")}
+               </div>`
+            : `<p class="reviews__empty">No reviews yet. Reviews here are only ever written by people who bought the pack through this site — none are seeded, bought or written by us.</p>`
+        }
+        ${form}
+      </section>`;
+  }
+
   function detailView(note) {
-    const t = note.contents.length;
     return `
       <div class="shell detail">
-        <button class="backlink" type="button" data-action="back"><span aria-hidden="true">←</span> All notes</button>
+        <button class="backlink" type="button" data-action="back"><span aria-hidden="true">←</span> Back to all notes</button>
         <div class="detail__grid">
           <div>
-            <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.9rem">
+            <div class="card__tags detail__tags">
               <span class="tag">${esc(subjectName(note.subject))}</span>
               <span class="tag">${esc(note.level)}</span>
               ${note.mine ? '<span class="tag tag--mine">Your listing</span>' : ""}
             </div>
-            <h2>${esc(note.title)}</h2>
+            <h1>${esc(note.title)}</h1>
             <p class="detail__sub">
               <span>${esc(note.course)}</span><span>${esc(note.institution)}</span>
               <span>${esc(unitLabel(note))}</span><span>${esc(note.format)}</span>
@@ -433,14 +594,14 @@
             </p>
             <p class="detail__summary">${esc(note.summary)}</p>
 
-            <section class="section">
-              <h3>Inside the pack</h3>
+            <section class="section" aria-labelledby="preview-head">
+              <h3 id="preview-head">Inside the pack</h3>
               <div class="pages">${pagePreview(note)}</div>
-              <p style="margin-top:.7rem;font-size:.8125rem;color:var(--ink-3)">Preview shows sample pages. The full ${esc(unitLabel(note))} download unlocks at checkout.</p>
+              <p class="section__foot">Preview shows sample pages drawn from the pack's layout. The full ${esc(unitLabel(note))} unlock at checkout.</p>
             </section>
 
-            <section class="section">
-              <h3>Contents <span class="mono" style="font-size:.75rem;color:var(--ink-3);font-weight:400">${t} sections</span></h3>
+            <section class="section" aria-labelledby="contents-head">
+              <h3 id="contents-head">Contents <span class="section__aside">${note.contents.length} sections</span></h3>
               <ul class="contents">
                 ${note.contents
                   .map(([label, page]) => `<li><span>${esc(label)}</span><span class="pageno">${page ? `p.${page}` : ""}</span></li>`)
@@ -448,54 +609,29 @@
               </ul>
             </section>
 
-            <section class="section">
-              <h3>What you get</h3>
+            <section class="section" aria-labelledby="includes-head">
+              <h3 id="includes-head">What you get</h3>
               <ul class="includes">${note.includes.map((line) => `<li>${esc(line)}</li>`).join("")}</ul>
             </section>
 
-            ${
-              note.reviews && note.reviews.length
-                ? `<section class="section">
-                     <h3>Reviews <span class="mono" style="font-size:.75rem;color:var(--ink-3);font-weight:400">${note.rating.toFixed(1)} average from ${note.ratingCount}</span></h3>
-                     <div class="reviews">
-                       ${note.reviews
-                         .map(
-                           (r) => `
-                         <article class="review">
-                           <div class="avatar" aria-hidden="true">${esc(initials(r.name))}</div>
-                           <div>
-                             <div class="review__head">
-                               <span class="review__name">${esc(r.name)}</span>
-                               <span class="rating"><span class="rating__star" aria-hidden="true">★</span>${r.rating}</span>
-                               ${r.verified ? '<span class="verified"><span aria-hidden="true">✓</span> Verified purchase</span>' : ""}
-                               <span class="review__when">${esc(r.when)}</span>
-                             </div>
-                             <p>${esc(r.text)}</p>
-                           </div>
-                         </article>`,
-                         )
-                         .join("")}
-                     </div>
-                   </section>`
-                : ""
-            }
+            ${reviewSection(note)}
           </div>
 
-          <aside class="buypanel">
+          <aside class="buypanel" aria-label="Buy this pack">
             <div class="buypanel__top">
               <div class="buypanel__price">
-                <p class="price">${money(note.price)}${note.listPrice && note.listPrice > note.price ? `<span class="price--was">${money(note.listPrice)}</span>` : ""}</p>
+                <p class="price">${money(note.price)}</p>
                 ${ratingMarkup(note)}
               </div>
               ${
                 owns(note.id)
-                  ? `<button class="btn btn--primary btn--wide" type="button" data-action="download" data-id="${esc(note.id)}">Download again</button>
-                     <p style="font-size:.8125rem;color:var(--tick);text-align:center"><span aria-hidden="true">✓</span> Already in your library</p>`
+                  ? `<button class="btn btn--primary btn--wide" type="button" data-action="download" data-id="${esc(note.id)}" aria-label="Download ${esc(note.title)} again">Download again</button>
+                     <p class="buypanel__owned"><span aria-hidden="true">✓</span> Already in your library</p>`
                   : inCart(note.id)
                     ? `<button class="btn btn--wide" type="button" data-action="open-cart">Go to cart</button>
-                       <button class="btn btn--ghost btn--wide" type="button" data-action="remove" data-id="${esc(note.id)}">Remove from cart</button>`
-                    : `<button class="btn btn--primary btn--wide" type="button" data-action="add" data-id="${esc(note.id)}">Add to cart</button>
-                       <button class="btn btn--ghost btn--wide" type="button" data-action="buy-now" data-id="${esc(note.id)}">Buy now</button>`
+                       <button class="btn btn--ghost btn--wide" type="button" data-action="remove" data-id="${esc(note.id)}" aria-label="Remove ${esc(note.title)} from cart">Remove from cart</button>`
+                    : `<button class="btn btn--primary btn--wide" type="button" data-action="add" data-id="${esc(note.id)}" aria-label="Add ${esc(note.title)} to cart">Add to cart</button>
+                       <button class="btn btn--ghost btn--wide" type="button" data-action="buy-now" data-id="${esc(note.id)}">Buy now — go straight to checkout</button>`
               }
             </div>
             <dl class="buypanel__rows">
@@ -503,13 +639,18 @@
               <div class="buyrow"><dt>${note.cards ? "Cards" : "Pages"}</dt><dd>${note.cards || note.pages}</dd></div>
               <div class="buyrow"><dt>Last updated</dt><dd>${esc(note.updated)}</dd></div>
               <div class="buyrow"><dt>Delivery</dt><dd>Instant download</dd></div>
+              ${
+                note.seller.grade
+                  ? `<div class="buyrow"><dt>Seller's stated result</dt><dd>${esc(note.seller.grade)} <span class="unverified">unverified</span></dd></div>`
+                  : ""
+              }
             </dl>
-            <p class="licence"><b>Personal study licence.</b> Yours to read, print and annotate for your own study. Reselling or reposting the file isn't allowed.</p>
+            <p class="licence"><b>Personal study licence.</b> Yours to read, print and annotate for your own study. Reselling or reposting the file isn't allowed. <a href="#/policy/terms" data-nav>Full terms</a>.</p>
             <div class="seller">
               <div class="avatar" aria-hidden="true">${esc(initials(note.seller.name))}</div>
               <div>
                 <p class="seller__name">${esc(note.seller.name)}</p>
-                <p class="seller__meta">${esc(note.seller.grade || "Seller")} · ${note.seller.sales ? `${note.seller.sales.toLocaleString(CONFIG.locale)} sales` : "New seller"}${note.seller.since ? ` · since ${esc(note.seller.since)}` : ""}</p>
+                <p class="seller__meta">Selling here since ${esc(note.seller.since || new Date().getFullYear())}</p>
               </div>
             </div>
           </aside>
@@ -527,8 +668,8 @@
       <div class="shell">
         <div class="page-head">
           <p class="eyebrow">Your purchases</p>
-          <h2>Library</h2>
-          <p>Everything you've bought, ready to download again whenever you need it. Downloads never expire.</p>
+          <h1>Library</h1>
+          <p>Everything you've bought, ready to download again whenever you need it.</p>
         </div>
         <div class="stack">
           ${
@@ -539,12 +680,12 @@
               <article class="libitem" style="--tint:${tintOf(note.subject)}">
                 <div class="lineitem__thumb" aria-hidden="true"></div>
                 <div>
-                  <h3 class="libitem__title">${esc(note.title)}</h3>
+                  <h2 class="libitem__title">${esc(note.title)}</h2>
                   <p class="libitem__meta">${esc(note.course)} · ${esc(unitLabel(note))} · ${esc(note.format)} · order ${esc(order.ref)}</p>
                 </div>
                 <div class="libitem__actions">
-                  <button class="btn btn--sm btn--ghost" type="button" data-action="open-note" data-id="${esc(note.id)}">View listing</button>
-                  <button class="btn btn--sm btn--primary" type="button" data-action="download" data-id="${esc(note.id)}">Download</button>
+                  <button class="btn btn--sm btn--ghost" type="button" data-action="open-note" data-id="${esc(note.id)}" aria-label="View listing: ${esc(note.title)}">View listing</button>
+                  <button class="btn btn--sm btn--primary" type="button" data-action="download" data-id="${esc(note.id)}" aria-label="Download ${esc(note.title)}">Download</button>
                 </div>
               </article>`,
                   )
@@ -552,7 +693,7 @@
               : `<div class="empty">
                    <h3>Nothing here yet</h3>
                    <p>Notes you buy land here straight after checkout.</p>
-                   <p style="margin-top:1rem"><a class="btn btn--primary" href="#/" data-nav>Browse notes</a></p>
+                   <p class="empty__action"><a class="btn btn--primary" href="#/" data-nav>Browse notes</a></p>
                  </div>`
           }
         </div>
@@ -576,7 +717,6 @@
   };
 
   function draftNote() {
-    const priceP = Math.max(0, Math.round(parseFloat(draft.price || "0") * 100));
     return {
       id: "draft",
       title: draft.title || "Your note pack title",
@@ -586,38 +726,35 @@
       level: draft.level,
       pages: Number(draft.pages) || 0,
       format: draft.format,
-      price: priceP,
-      rating: 0,
-      ratingCount: 0,
+      price: Math.max(0, Math.round(parseFloat(draft.price || "0") * 100)),
       updated: new Date().toLocaleDateString(CONFIG.locale, { month: "short", year: "numeric" }),
-      seller: { name: "You", grade: draft.grade, sales: 0 },
+      seller: { name: "You", grade: draft.grade },
       summary: draft.summary,
       contents: [],
       includes: [],
-      reviews: [],
+      mine: true,
     };
   }
 
   function sellView() {
     const preview = draftNote();
-    const priceP = preview.price;
-    const fee = Math.round((priceP * CONFIG.platformFeePct) / 100);
+    const fee = Math.round((preview.price * CONFIG.platformFeePct) / 100);
 
     return `
       <div class="shell">
         <div class="page-head">
           <p class="eyebrow">Seller</p>
-          <h2>List your notes</h2>
+          <h1>List your notes</h1>
           <p>Describe the pack the way a buyer decides: which module it covers, how long it is, and what result it earned. Listings go live the moment you publish.</p>
         </div>
         <form class="sell__grid" id="sell-form" novalidate>
           <div class="panel">
-            <h3>Listing details</h3>
+            <h2>Listing details</h2>
             <div class="formgrid">
               <div class="field">
                 <label for="f-title">Title</label>
-                <input id="f-title" name="title" value="${esc(draft.title)}" placeholder="Reaction Mechanisms, Fully Drawn" required>
-                <span class="hint">Say what the notes cover, not that they are notes.</span>
+                <input id="f-title" name="title" value="${esc(draft.title)}" placeholder="Reaction Mechanisms, Fully Drawn" required aria-describedby="f-title-hint">
+                <span class="hint" id="f-title-hint">Say what the notes cover, not that they are notes.</span>
               </div>
               <div class="formgrid formgrid--2">
                 <div class="field">
@@ -659,13 +796,13 @@
               </div>
               <div class="formgrid formgrid--2">
                 <div class="field">
-                  <label for="f-price">Price (£)</label>
+                  <label for="f-price">Price in pounds</label>
                   <input id="f-price" name="price" inputmode="decimal" value="${esc(draft.price)}" placeholder="7.50">
                 </div>
                 <div class="field">
                   <label for="f-grade">Result you earned</label>
-                  <input id="f-grade" name="grade" value="${esc(draft.grade)}" placeholder="First · 82%">
-                  <span class="hint">Optional, but it sells.</span>
+                  <input id="f-grade" name="grade" value="${esc(draft.grade)}" placeholder="First · 82%" aria-describedby="f-grade-hint">
+                  <span class="hint" id="f-grade-hint">Optional. Shown to buyers as your own unverified statement.</span>
                 </div>
               </div>
               <div class="field">
@@ -674,30 +811,35 @@
               </div>
               <div class="field">
                 <label for="f-contents">Contents, one per line</label>
-                <textarea id="f-contents" name="contents" placeholder="Arrow-pushing conventions&#10;SN1 vs SN2 decision tree&#10;40 worked past-paper mechanisms">${esc(draft.contents)}</textarea>
-                <span class="hint">Buyers scan this before anything else.</span>
+                <textarea id="f-contents" name="contents" placeholder="Arrow-pushing conventions&#10;SN1 vs SN2 decision tree&#10;40 worked past-paper mechanisms" aria-describedby="f-contents-hint">${esc(draft.contents)}</textarea>
+                <span class="hint" id="f-contents-hint">Buyers scan this before anything else.</span>
               </div>
+              <label class="consent">
+                <input type="checkbox" name="ownership" id="f-ownership" required>
+                <span>I wrote these notes myself and I own the copyright in them. They contain no lecture slides, textbook material, past papers or anyone else's work, and they are not an assignment written for someone to submit.</span>
+              </label>
+              <p class="formerror" id="sell-error" role="alert" hidden></p>
               <button class="btn btn--primary btn--wide" type="submit">Publish listing</button>
             </div>
           </div>
 
           <div class="preview-sticky">
             <div>
-              <p class="eyebrow" style="margin-bottom:.6rem">Live preview</p>
-              <div class="grid" style="grid-template-columns:minmax(0,1fr);padding-bottom:0">${cardMarkup({ ...preview, mine: true })}</div>
+              <p class="eyebrow preview-label">Live preview</p>
+              <div class="grid preview-grid">${cardMarkup(preview)}</div>
             </div>
             <div class="panel">
-              <h3 style="font-size:var(--step-1)">Your payout</h3>
+              <h2 class="panel__sub">Your payout</h2>
               <div class="payout">
-                <div class="payout__row"><span>Buyer pays</span><span>${money(priceP)}</span></div>
-                <div class="payout__row"><span>${CONFIG.shopName} fee (${CONFIG.platformFeePct}%)</span><span>−${money(fee)}</span></div>
-                <div class="payout__row payout__row--sum"><span>You keep</span><span>${money(priceP - fee)}</span></div>
+                <div class="payout__row"><span>Buyer pays</span><span>${money(preview.price)}</span></div>
+                <div class="payout__row"><span>${esc(CONFIG.shopName)} fee (${CONFIG.platformFeePct}%)</span><span>−${money(fee)}</span></div>
+                <div class="payout__row payout__row--sum"><span>You keep</span><span>${money(preview.price - fee)}</span></div>
               </div>
-              <p style="font-size:.75rem;color:var(--ink-3);margin-top:.8rem">${esc(CONFIG.vatNote)} Payouts run weekly once a payment provider is connected.</p>
+              <p class="panel__foot">${esc(CONFIG.vatNote)} You are responsible for tax on what you earn.</p>
             </div>
-            <div class="notice" style="margin-top:0">
+            <div class="notice notice--flush">
               <span aria-hidden="true" class="mono">i</span>
-              <p>Only list work you wrote yourself. Uploading a lecturer's slides or a textbook chapter is copyright infringement, and the listing will be removed.</p>
+              <p>Only list work you wrote yourself. Uploading a lecturer's slides or a textbook chapter is copyright infringement — see the <a href="#/policy/integrity" data-nav>copyright policy</a>.</p>
             </div>
           </div>
         </form>
@@ -717,7 +859,7 @@
       <div class="shell">
         <div class="page-head">
           <p class="eyebrow">Seller</p>
-          <h2>Your sales</h2>
+          <h1>Your sales</h1>
           <p>Everything you've listed, and what it has earned. Figures cover orders placed in this browser.</p>
         </div>
         <div class="salesgrid">
@@ -729,17 +871,18 @@
         <div class="stack">
           ${
             mine.length
-              ? `<div class="panel" style="padding:0">
+              ? `<div class="panel panel--flush">
                    <div class="tablewrap">
                      <table class="table">
-                       <thead><tr><th>Listing</th><th>Level</th><th>Price</th><th>Sold</th><th>Earned</th></tr></thead>
+                       <caption class="sr-only">Your listings and their sales</caption>
+                       <thead><tr><th scope="col">Listing</th><th scope="col">Level</th><th scope="col">Price</th><th scope="col">Sold</th><th scope="col">Earned</th></tr></thead>
                        <tbody>
                          ${mine
                            .map((n) => {
                              const copies = sold.filter((s) => s.id === n.id).length;
                              const earned = Math.round(copies * n.price * (1 - CONFIG.platformFeePct / 100));
                              return `<tr>
-                               <td><button class="linkbtn" type="button" data-action="open-note" data-id="${esc(n.id)}" style="font-size:.875rem;color:var(--ink)">${esc(n.title)}</button><br><span class="mono" style="font-size:.75rem;color:var(--ink-3)">${esc(n.course)}</span></td>
+                               <td><button class="linkbtn linkbtn--strong" type="button" data-action="open-note" data-id="${esc(n.id)}">${esc(n.title)}</button><br><span class="mono cellsub">${esc(n.course)}</span></td>
                                <td>${esc(n.level)}</td>
                                <td>${money(n.price)}</td>
                                <td>${copies}</td>
@@ -754,12 +897,75 @@
               : `<div class="empty">
                    <h3>You haven't listed anything yet</h3>
                    <p>Your first listing takes about two minutes.</p>
-                   <p style="margin-top:1rem"><a class="btn btn--primary" href="#/sell" data-nav>List your notes</a></p>
+                   <p class="empty__action"><a class="btn btn--primary" href="#/sell" data-nav>List your notes</a></p>
                  </div>`
           }
         </div>
       </div>`;
   }
+
+  /* -------------------------------------------------------------- policy view */
+
+  function policyView(slug) {
+    const doc = POLICIES[slug];
+    if (!doc) return notFoundView("That policy page doesn't exist.");
+    const missing = missingSiteFields();
+
+    const body = doc.blocks
+      .map((block) => {
+        const parts = block.body
+          .map((item) => (typeof item === "string" ? `<p>${fillTokens(item)}</p>` : `<ul class="prose__list">${item.list.map((li) => `<li>${fillTokens(li)}</li>`).join("")}</ul>`))
+          .join("");
+        const action =
+          block.action === "clear-data"
+            ? `<p class="prose__action"><button class="btn btn--ghost" type="button" data-action="clear-data">Delete everything stored on this device</button></p>`
+            : "";
+        return `<section class="prose__section"><h2>${fillTokens(block.h)}</h2>${parts}${action}</section>`;
+      })
+      .join("");
+
+    return `
+      <div class="shell">
+        <div class="page-head">
+          <p class="eyebrow">Policies</p>
+          <h1>${esc(doc.title)}</h1>
+          <p>${fillTokens(doc.lede)}</p>
+          <p class="page-head__meta">Last updated ${esc(SITE.policiesUpdated)}</p>
+        </div>
+        <div class="policy__grid">
+          <nav class="policy__nav" aria-label="Policy pages">
+            <ul>
+              ${POLICY_ORDER.map(
+                (s) =>
+                  `<li><a href="#/policy/${s}" data-nav${s === slug ? ' aria-current="page"' : ""}>${esc(POLICIES[s].nav)}</a></li>`,
+              ).join("")}
+            </ul>
+          </nav>
+          <article class="prose">
+            ${
+              missing.length
+                ? `<div class="setup" role="note">
+                     <p class="setup__head">Before this page is publishable</p>
+                     <p>${missing.length} required business ${missing.length === 1 ? "detail is" : "details are"} still blank. Fill in <code>SITE</code> at the top of <code>app.js</code>:</p>
+                     <ul>${missing.map((k) => `<li><code>${esc(k)}</code> — ${esc(SITE_FIELDS[k])}</li>`).join("")}</ul>
+                     <p>Nothing here is legal advice. Have a solicitor read these pages before you trade.</p>
+                   </div>`
+                : ""
+            }
+            ${body}
+          </article>
+        </div>
+      </div>`;
+  }
+
+  const notFoundView = (message) => `
+    <div class="shell">
+      <div class="empty empty--page">
+        <h1>Not found</h1>
+        <p>${esc(message)}</p>
+        <p class="empty__action"><a class="btn btn--primary" href="#/" data-nav>Browse notes</a></p>
+      </div>
+    </div>`;
 
   /* --------------------------------------------------------------- overlays */
 
@@ -767,9 +973,9 @@
     const { items, subtotal, discount, promo, total } = totals();
     return `
       <div class="scrim" data-action="close-overlay"></div>
-      <aside class="drawer" role="dialog" aria-modal="true" aria-label="Cart">
+      <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title">
         <header class="drawer__head">
-          <h2>Cart <span class="mono" style="font-size:.8125rem;color:var(--ink-3);font-weight:400">${items.length} ${items.length === 1 ? "pack" : "packs"}</span></h2>
+          <h2 id="cart-title">Cart <span class="drawer__count">${items.length} ${items.length === 1 ? "pack" : "packs"}</span></h2>
           <button class="iconbtn" type="button" data-action="close-overlay" aria-label="Close cart">✕</button>
         </header>
         <div class="drawer__body">
@@ -785,23 +991,23 @@
                 <p class="lineitem__meta">${esc(n.course)} · ${esc(unitLabel(n))}</p>
               </div>
               <div class="lineitem__right">
-                <span class="price" style="font-size:.9375rem">${money(n.price)}</span>
-                <button class="linkbtn" type="button" data-action="remove" data-id="${esc(n.id)}">Remove</button>
+                <span class="price price--sm">${money(n.price)}</span>
+                <button class="linkbtn" type="button" data-action="remove" data-id="${esc(n.id)}" aria-label="Remove ${esc(n.title)} from cart">Remove</button>
               </div>
             </div>`,
                   )
                   .join("")
-              : `<p style="color:var(--ink-2)">Your cart is empty. Add a note pack and it'll show up here.</p>`
+              : `<p class="drawer__empty">Your cart is empty. Add a note pack and it'll show up here.</p>`
           }
           ${
             items.length
-              ? `<div class="field" style="margin-top:.5rem">
+              ? `<div class="field promo">
                    <label for="promo">Discount code</label>
-                   <div style="display:flex;gap:.5rem">
-                     <input id="promo" placeholder="FRESHERS10" value="${esc(state.promo || "")}">
-                     <button class="btn btn--ghost btn--sm" type="button" data-action="apply-promo">Apply</button>
+                   <div class="promo__row">
+                     <input id="promo" value="${esc(state.promo || "")}" placeholder="FRESHERS10">
+                     <button class="btn btn--ghost btn--sm" type="button" data-action="apply-promo">Apply code</button>
                    </div>
-                   ${promo ? `<span class="hint" style="color:var(--tick)">${esc(promo.label)} applied</span>` : ""}
+                   ${promo ? `<span class="hint hint--good">${esc(promo.label)} applied</span>` : ""}
                  </div>`
               : ""
           }
@@ -811,11 +1017,11 @@
             ? `<div class="drawer__foot">
                  <div class="totals">
                    <div class="totals__row"><span>Subtotal</span><span>${money(subtotal)}</span></div>
-                   ${discount ? `<div class="totals__row" style="color:var(--tick)"><span>Discount</span><span>−${money(discount)}</span></div>` : ""}
+                   ${discount ? `<div class="totals__row totals__row--good"><span>Discount</span><span>−${money(discount)}</span></div>` : ""}
                    <div class="totals__row"><span>VAT</span><span>Included</span></div>
                    <div class="totals__row totals__row--sum"><span>Total</span><span>${money(total)}</span></div>
                  </div>
-                 <button class="btn btn--primary btn--wide" type="button" data-action="checkout">Checkout</button>
+                 <button class="btn btn--primary btn--wide" type="button" data-action="checkout">Go to checkout</button>
                  <button class="btn btn--ghost btn--wide" type="button" data-action="close-overlay">Keep browsing</button>
                </div>`
             : ""
@@ -828,11 +1034,11 @@
     return `
       <div class="scrim" data-action="close-overlay"></div>
       <div class="modal">
-        <div class="modal__card" role="dialog" aria-modal="true" aria-label="Checkout">
+        <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
           <header class="modal__head">
             <div>
               <p class="eyebrow">Step 2 of 2</p>
-              <h2>Checkout</h2>
+              <h2 id="checkout-title">Checkout</h2>
             </div>
             <button class="iconbtn" type="button" data-action="close-overlay" aria-label="Close checkout">✕</button>
           </header>
@@ -841,23 +1047,26 @@
               <span class="demoflag__mark" aria-hidden="true">!</span>
               <p><b>Demo checkout — no money moves.</b> There are no card fields here on purpose. Connect Stripe, Paddle or Lemon Squeezy before selling to real buyers; the README shows where the hook goes.</p>
             </div>
-            <div class="formgrid formgrid--2">
-              <div class="field">
-                <label for="c-name">Name</label>
-                <input id="c-name" name="name" value="${esc(state.buyer?.name || "")}" placeholder="Alex Doyle" required>
-              </div>
-              <div class="field">
-                <label for="c-email">Email for the download</label>
-                <input id="c-email" name="email" type="email" value="${esc(state.buyer?.email || "")}" placeholder="alex@university.ac.uk" required>
-              </div>
+            <div class="field">
+              <label for="c-email">Email for the download</label>
+              <input id="c-email" name="email" type="email" autocomplete="email" placeholder="alex@university.ac.uk" required aria-describedby="c-email-hint checkout-error">
+              <span class="hint" id="c-email-hint">Used to send the file and the receipt, and nothing else. We don't ask for your name or address because a download doesn't need them.</span>
             </div>
             <div class="receipt">
               ${items.map((n) => `<div class="receipt__row"><span>${esc(n.title)}</span><span>${money(n.price)}</span></div>`).join("")}
-              ${discount ? `<div class="receipt__row" style="color:var(--tick)"><span>Discount</span><span>−${money(discount)}</span></div>` : ""}
-              <div class="receipt__row" style="border-top:1px solid var(--rule);padding-top:.5rem;font-weight:600"><span>Total</span><span>${money(total)}</span></div>
-              <p style="font-size:.75rem;color:var(--ink-3)">${esc(CONFIG.vatNote)} Subtotal ${money(subtotal)}.</p>
+              ${discount ? `<div class="receipt__row receipt__row--good"><span>Discount</span><span>−${money(discount)}</span></div>` : ""}
+              <div class="receipt__row receipt__row--sum"><span>Total</span><span>${money(total)}</span></div>
+              <p class="receipt__note">${esc(CONFIG.vatNote)} Subtotal ${money(subtotal)}.</p>
             </div>
-            <p id="checkout-error" style="color:var(--pen);font-size:.8125rem" hidden></p>
+            <label class="consent">
+              <input type="checkbox" name="terms" id="c-terms" required>
+              <span>I agree to the <a href="#/policy/terms" data-nav>terms and conditions</a> and the <a href="#/policy/privacy" data-nav>privacy policy</a>.</span>
+            </label>
+            <label class="consent">
+              <input type="checkbox" name="immediate" id="c-immediate" required>
+              <span>I want the download straight away, and I understand that I lose my 14-day right to cancel once it starts. <a href="#/policy/refunds" data-nav>Refund policy</a>.</span>
+            </label>
+            <p class="formerror" id="checkout-error" role="alert" hidden></p>
           </form>
           <div class="modal__foot">
             <button class="btn btn--primary btn--wide" type="submit" form="checkout-form">Place demo order · ${money(total)}</button>
@@ -867,16 +1076,58 @@
       </div>`;
   }
 
+  /* ------------------------------------------------------- focus management */
+
+  const FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
   function renderOverlay() {
     const host = $("#overlay");
     if (!host) return;
+    const opening = Boolean(state.overlay);
+    if (opening && !host.dataset.open) state.lastFocus = document.activeElement;
+
     host.innerHTML = state.overlay === "cart" ? cartMarkup() : state.overlay === "checkout" ? checkoutMarkup() : "";
-    document.body.style.overflow = state.overlay ? "hidden" : "";
-    if (state.overlay === "checkout") {
+    document.body.classList.toggle("is-locked", opening);
+
+    if (opening) {
+      const justOpened = host.dataset.open !== state.overlay;
+      host.dataset.open = state.overlay;
       const form = $("#checkout-form");
       if (form) form.addEventListener("submit", submitCheckout);
-      const name = $("#c-name");
-      if (name) name.focus();
+      // Move focus in only when the dialog is new; a re-render behind an open
+      // dialog (removing a line item, say) must not yank focus back to the top.
+      if (justOpened) {
+        const first = $(FOCUSABLE, $(".drawer, .modal__card", host) || host);
+        if (first) first.focus();
+      }
+    } else if (host.dataset.open) {
+      delete host.dataset.open;
+      const back = state.lastFocus;
+      state.lastFocus = null;
+      if (back && document.contains(back)) back.focus();
+    }
+    syncChrome();
+  }
+
+  function keepFocusInside(event) {
+    if (event.key !== "Tab" || !state.overlay) return;
+    const dialog = $(".drawer, .modal__card");
+    if (!dialog) return;
+    const items = $$(FOCUSABLE, dialog).filter((el) => el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    const active = document.activeElement;
+    if (!dialog.contains(active)) {
+      event.preventDefault();
+      first.focus();
+    } else if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
     }
   }
 
@@ -887,7 +1138,13 @@
     clearTimeout(toast.timer);
     toast.timer = setTimeout(() => {
       host.innerHTML = "";
-    }, 3200);
+    }, 4000);
+  }
+
+  function showError(el, message) {
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = message;
   }
 
   /* ------------------------------------------------------------------ actions */
@@ -910,25 +1167,40 @@
 
   function submitCheckout(event) {
     event.preventDefault();
-    const name = $("#c-name").value.trim();
-    const email = $("#c-email").value.trim();
+    const emailField = $("#c-email");
+    const email = emailField.value.trim();
     const error = $("#checkout-error");
-    if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      error.hidden = false;
-      error.textContent = !name ? "Add a name so the receipt has someone on it." : "That email doesn't look right — the download link goes there.";
+    const terms = $("#c-terms");
+    const immediate = $("#c-immediate");
+
+    emailField.removeAttribute("aria-invalid");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      emailField.setAttribute("aria-invalid", "true");
+      showError(error, "Enter an email address we can send the download to.");
+      emailField.focus();
       return;
     }
+    if (!terms.checked) {
+      showError(error, "Tick the box to accept the terms and the privacy policy.");
+      terms.focus();
+      return;
+    }
+    if (!immediate.checked) {
+      showError(error, "We can only release the file if you agree to it downloading straight away.");
+      immediate.focus();
+      return;
+    }
+
     const { total } = totals();
     const order = {
       ref: `NC-${Date.now().toString(36).toUpperCase().slice(-6)}`,
       date: Date.now(),
       items: [...state.cart],
       total,
-      name,
       email,
+      consent: { terms: true, immediateDelivery: true, at: Date.now() },
     };
     state.orders.push(order);
-    state.buyer = { name, email };
     state.cart = [];
     state.promo = null;
     state.overlay = null;
@@ -939,12 +1211,20 @@
 
   function publishListing(form) {
     const data = Object.fromEntries(new FormData(form).entries());
-    Object.assign(draft, data);
+    const error = $("#sell-error");
+    Object.assign(draft, { ...data, ownership: undefined });
+
     if (!draft.title.trim()) {
-      toast("Give the listing a title first");
+      showError(error, "Give the listing a title so buyers know what it covers.");
       $("#f-title").focus();
       return;
     }
+    if (!$("#f-ownership").checked) {
+      showError(error, "Confirm you wrote these notes and own the copyright before publishing.");
+      $("#f-ownership").focus();
+      return;
+    }
+
     const price = Math.max(0, Math.round(parseFloat(draft.price || "0") * 100));
     const id = `own-${Date.now().toString(36)}`;
     const contents = draft.contents
@@ -963,22 +1243,54 @@
       pages: Number(draft.pages) || 0,
       format: draft.format,
       price,
-      rating: 0,
-      ratingCount: 0,
       updated: new Date().toLocaleDateString(CONFIG.locale, { month: "short", year: "numeric" }),
       createdAt: Date.now(),
-      isNew: true,
       mine: true,
-      seller: { name: "You", grade: (draft.grade || "").trim(), sales: 0, since: String(new Date().getFullYear()) },
+      seller: { name: "You", grade: (draft.grade || "").trim(), since: String(new Date().getFullYear()) },
       summary: (draft.summary || "").trim() || "No summary yet — add one to help buyers decide.",
       contents: contents.length ? contents : [["Contents to be added", 0]],
       includes: [`${Number(draft.pages) || "?"} ${draft.format.includes("Anki") ? "cards" : "pages"}, ${draft.format}`, "Instant download after purchase"],
-      reviews: [],
     });
     Object.assign(draft, { title: "", course: "", institution: "", pages: "", grade: "", summary: "", contents: "" });
     writeStore();
     location.hash = `#/note/${id}`;
     toast("Listing published — it's live in the shop");
+  }
+
+  function publishReview(form, noteId) {
+    const error = $("#review-error");
+    const rating = Number((form.querySelector('input[name="rating"]:checked') || {}).value || 0);
+    const text = $("#review-text").value.trim();
+
+    if (!rating) {
+      showError(error, "Pick a rating from 1 to 5.");
+      form.querySelector('input[name="rating"]').focus();
+      return;
+    }
+    if (text.length < 10) {
+      showError(error, "Write at least a sentence — it's what the next buyer reads.");
+      $("#review-text").focus();
+      return;
+    }
+    if (!owns(noteId) || hasReviewed(noteId)) return;
+
+    /* `by` is the display name a real backend would attach to the buyer's
+     * account. Locally there is no account, so the review is yours. */
+    state.reviews.push({ id: `r-${Date.now().toString(36)}`, noteId, rating, text, at: Date.now(), by: "You" });
+    writeStore();
+    renderView();
+    toast("Review published");
+  }
+
+  function clearAllData() {
+    try {
+      localStorage.removeItem(STORE_KEY);
+    } catch {
+      /* nothing stored to clear */
+    }
+    Object.assign(state, blank, { cart: [], orders: [], listings: [], reviews: [], promo: null });
+    render();
+    toast("Everything this site stored on your device has been deleted");
   }
 
   /* ------------------------------------------------------------------ routing */
@@ -987,6 +1299,7 @@
     const hash = location.hash.replace(/^#\/?/, "");
     const [head, id] = hash.split("/");
     if (head === "note" && id) return { name: "note", id };
+    if (head === "policy" && id) return { name: "policy", id };
     if (["sell", "library", "dashboard"].includes(head)) return { name: head, id: null };
     return { name: "browse", id: null };
   }
@@ -994,12 +1307,20 @@
   function renderView() {
     const view = $("#view");
     if (!view) return;
-    if (state.route.name === "note") {
-      const note = noteById(state.route.id);
-      view.innerHTML = note
-        ? detailView(note)
-        : `<div class="shell"><div class="empty" style="margin-block:4rem"><h3>That listing has gone</h3><p>It may have been unpublished.</p><p style="margin-top:1rem"><a class="btn btn--primary" href="#/" data-nav>Browse notes</a></p></div></div>`;
-    } else if (state.route.name === "sell") {
+    const { name, id } = state.route;
+
+    if (name === "note") {
+      const note = noteById(id);
+      view.innerHTML = note ? detailView(note) : notFoundView("That listing has gone. It may have been unpublished.");
+      const reviewForm = $("#review-form");
+      if (reviewForm)
+        reviewForm.addEventListener("submit", (e) => {
+          e.preventDefault();
+          publishReview(reviewForm, id);
+        });
+    } else if (name === "policy") {
+      view.innerHTML = policyView(id);
+    } else if (name === "sell") {
       view.innerHTML = sellView();
       const form = $("#sell-form");
       form.addEventListener("submit", (e) => {
@@ -1007,7 +1328,7 @@
         publishListing(form);
       });
       form.addEventListener("input", (e) => {
-        if (!e.target.name) return;
+        if (!e.target.name || e.target.type === "checkbox") return;
         draft[e.target.name] = e.target.value;
         const preview = $(".preview-sticky");
         if (preview) {
@@ -1017,13 +1338,13 @@
         }
       });
       form.addEventListener("change", (e) => {
-        if (!e.target.name) return;
+        if (!e.target.name || e.target.type === "checkbox") return;
         draft[e.target.name] = e.target.value;
         renderView();
       });
-    } else if (state.route.name === "library") {
+    } else if (name === "library") {
       view.innerHTML = libraryView();
-    } else if (state.route.name === "dashboard") {
+    } else if (name === "dashboard") {
       view.innerHTML = dashboardView();
     } else {
       view.innerHTML = browseView();
@@ -1034,7 +1355,6 @@
   function render() {
     renderView();
     renderOverlay();
-    syncChrome();
   }
 
   function onRoute() {
@@ -1043,14 +1363,18 @@
     state.route = next;
     if (state.overlay && changed) state.overlay = null;
     render();
-    if (changed) window.scrollTo({ top: 0, behavior: "auto" });
+    if (changed) {
+      window.scrollTo({ top: 0, behavior: "auto" });
+      const view = $("#view");
+      if (view && state.started) view.focus({ preventScroll: true });
+    }
+    state.started = true;
   }
 
   /* ------------------------------------------------------------------- events */
 
   document.addEventListener("click", (event) => {
-    const nav = event.target.closest("[data-nav]");
-    if (nav) return; // let the hash link do its work
+    if (event.target.closest("[data-nav]")) return; // let the hash link do its work
 
     const el = event.target.closest("[data-action]");
     if (!el) return;
@@ -1102,6 +1426,9 @@
         if (note && order) deliver(note, order);
         break;
       }
+      case "clear-data":
+        clearAllData();
+        break;
       case "back":
         location.hash = "#/";
         break;
@@ -1126,7 +1453,9 @@
     if (event.key === "Escape" && state.overlay) {
       state.overlay = null;
       renderOverlay();
+      return;
     }
+    keepFocusInside(event);
   });
 
   window.addEventListener("hashchange", onRoute);

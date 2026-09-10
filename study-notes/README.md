@@ -1,50 +1,65 @@
 # Notecase — a storefront for selling study notes
 
 A self-contained shop for lecture notes, essay banks, case grids and flashcard
-decks. No build step, no framework, no dependencies: three files and a page
-shell. Open `index.html` and it runs.
+decks. No build step, no framework, no dependencies, and no network requests:
+open `index.html` and it runs.
 
 ```
 study-notes/
 ├── index.html          page shell
 ├── styles.css          design tokens + components (light and dark)
 ├── catalog.js          sample catalogue — replace with your own listings
-├── app.js              storefront logic
-└── build-artifact.mjs  inlines everything into one file
+├── policies.js         terms, privacy, refunds, cookies, accessibility, copyright
+├── app.js              storefront logic — SITE config lives at the top
+├── fonts/              self-hosted OFL typefaces (+ OFL.txt)
+├── check-a11y.mjs      contrast check over the real stylesheet
+└── build-artifact.mjs  runs the check, then inlines everything into one file
 ```
 
 ## Run it
 
 ```sh
-# anything that serves static files
-npx serve study-notes
-# or just open study-notes/index.html in a browser
-```
-
-Single-file build, for hosts (or Claude Artifacts) that want one page:
-
-```sh
-node build-artifact.mjs            # -> dist/artifact.html
-node build-artifact.mjs out.html
+npx serve study-notes            # or just open study-notes/index.html
+node check-a11y.mjs              # contrast report, exits non-zero on a failure
+node build-artifact.mjs          # -> dist/artifact.html (single file, fonts inlined)
 ```
 
 ## What works
 
-- **Browse** — search across titles, course codes, institutions and summaries;
-  filter by subject and level; sort by reviews, rating, price or recency.
+- **Browse** — search titles, course codes, institutions and summaries; filter by
+  subject and level; sort by rating, review count, price or recency.
 - **Listing pages** — contents with page numbers, sample-page preview with the
   rest locked, what's included, seller card, reviews.
-- **Cart and checkout** — discount codes (`FRESHERS10` is wired up), VAT-inclusive
-  totals, order records with references.
-- **Library** — every purchase, re-downloadable forever. Uses the Claude
-  Artifacts `downloads` capability when the page runs as an artifact, and a Blob
-  download everywhere else.
-- **Selling** — a listing form with a live preview of the card buyers will see,
+- **Cart and checkout** — discount codes (`FRESHERS10`), VAT-inclusive totals,
+  order references, and two consent steps that are recorded with the order.
+- **Library** — every purchase, re-downloadable. Uses the Claude Artifacts
+  `downloads` capability when the page runs as an artifact, a Blob download
+  everywhere else.
+- **Reviews** — only a buyer who owns a pack can review it, and every review
+  shown is a real one. Nothing is seeded.
+- **Selling** — listing form with a live card preview, a copyright declaration,
   and a payout breakdown net of the platform fee.
 - **Sales** — copies sold and earnings per listing.
 
-State lives in `localStorage` under `notecase.v1`, so a buyer's cart, orders and
-listings survive a reload but stay on their own device.
+State lives in `localStorage` under `notecase.v1` and never leaves the device.
+
+## Before you go live
+
+`SITE` at the top of `app.js` is deliberately blank:
+
+```js
+const SITE = { legalName: "", companyNumber: "", vatNumber: "", address: "", contactEmail: "", … };
+```
+
+Every blank field shows up as a red placeholder on the policy pages and in the
+footer, with a banner listing what's missing. Traders have to identify
+themselves under the Companies Act and the E-Commerce Regulations, and a
+plausible-looking invented address is worse than an obviously empty one.
+
+The six policy pages in `policies.js` are drafts written against what this code
+actually does. They are not legal advice — have a solicitor read them, and
+rewrite them the moment you add a backend, because most of what privacy and
+cookies say stops being true then.
 
 ## Payments are not connected
 
@@ -53,11 +68,11 @@ deliberately **no card fields** — collecting card details in a page that canno
 charge them would be worse than useless.
 
 To take real money, replace the body of `submitCheckout()` in `app.js` with a
-call to a payment provider and create the order from the webhook that confirms
+call to a payment provider, and create the order from the webhook that confirms
 payment, never from the browser:
 
 ```js
-// app.js — submitCheckout()
+// app.js — submitCheckout(), after the consent checks pass
 const res = await fetch("/api/checkout", {
   method: "POST",
   headers: { "content-type": "application/json" },
@@ -72,10 +87,37 @@ Your server then needs three things this front end deliberately does not do:
 1. **Price on the server.** Look prices up from your own database — never trust
    the amounts the page sends.
 2. **Fulfil from the webhook.** On `checkout.session.completed` (or your
-   provider's equivalent), record the order and issue a download.
+   provider's equivalent), record the order and issue the download.
 3. **Serve files through signed, expiring URLs**, not public storage links.
    `deliver()` in `app.js` is where a real download URL replaces the generated
    contents sheet.
+
+Keep the consent record. `order.consent` stores that the buyer accepted the
+terms and asked for immediate delivery, which is what makes the waiver of the
+14-day cancellation right effective. Move it server-side with the order.
+
+## How the compliance-shaped bits are built
+
+- **No third-party requests.** Fonts are served from `fonts/` (SIL Open Font
+  License, copyright holders in `fonts/OFL.txt`); the single-file build inlines
+  them as `data:` URIs. There is no analytics, advertising, embed or CDN call
+  anywhere, which is also why there is no cookie banner: the only storage is
+  strictly necessary, and PECR exempts that. Add an analytics tag and you need
+  real consent before it loads.
+- **No fake reviews.** The catalogue ships with no ratings, review counts or
+  seller sales tallies. Reviews are written by verified buyers only. Seeding
+  them would breach the Digital Markets, Competition and Consumers Act 2024.
+- **Data minimisation.** Checkout asks for an email address and nothing else —
+  no name, no address, no institution. Nothing about the buyer is persisted
+  beyond the order.
+- **Contrast.** `check-a11y.mjs` parses the tokens out of `styles.css` and
+  checks every text and control-boundary pair in both themes against WCAG 2.2.
+  `build-artifact.mjs` runs it first, so a regression fails the build.
+- **Keyboard and screen reader.** One `h1` per view, landmarks, a skip link,
+  labelled controls, dialogs that trap focus and restore it on close, errors
+  tied to their field and announced, and no information carried by colour alone.
+  There are no images anywhere — covers and previews are drawn in CSS and hidden
+  from assistive technology, with the same facts available as text.
 
 ## Making it yours
 
@@ -83,23 +125,8 @@ Your server then needs three things this front end deliberately does not do:
   `loadCatalogue()` in `app.js` at your API. `SUBJECTS` drives both the filter
   rail and the per-subject cover tint (`tint` is a hue, 0–360). Prices are in
   pence so arithmetic never drifts.
-- **Identity** — the palette, type scale and spacing are CSS custom properties
-  at the top of `styles.css`; both themes are defined there and nowhere else.
+- **Identity** — palette, type scale and spacing are custom properties at the
+  top of `styles.css`; both themes are defined there and nowhere else. Change a
+  colour and re-run `check-a11y.mjs`.
 - **Fee and currency** — `CONFIG` at the top of `app.js` (`platformFeePct`,
   `currency`, `locale`, `promos`).
-
-## Before you sell to real students
-
-- Sellers may only list work they wrote themselves. Lecture slides, textbook
-  chapters and past papers belong to whoever holds their copyright.
-- Say plainly that notes are a study aid, not work to submit. Most universities
-  treat submitting bought work as academic misconduct, and several jurisdictions
-  regulate contract-cheating services.
-- Digital goods sold in the UK and EU are VAT-rated at the buyer's location, and
-  the consumer right to cancel is waived only if the buyer agrees before the
-  download starts.
-- Have a takedown route for copyright complaints, and a refund policy — digital
-  files can't be returned.
-
-None of that is legal advice; it's the shortlist worth taking to someone who
-gives it.

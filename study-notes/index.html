@@ -6,20 +6,20 @@
     <title>Notecase</title>
     <meta name="description" content="A storefront for buying and selling study notes — lecture notes, essay banks, case grids and flashcard decks.">
     <meta name="color-scheme" content="light dark">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500;600&display=swap">
+    <!-- No third-party requests: fonts are served from ./fonts, and there is
+         no analytics, advertising or embedded component anywhere on the page. -->
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <div id="app"></div>
     <noscript>
-      <div style="padding:2rem;font-family:system-ui,sans-serif">
+      <div class="noscript">
         <h1>Notecase</h1>
         <p>This storefront needs JavaScript to browse and buy notes.</p>
       </div>
     </noscript>
     <script src="catalog.js"></script>
+    <script src="policies.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

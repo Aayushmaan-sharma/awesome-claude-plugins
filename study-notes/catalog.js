@@ -6,6 +6,11 @@
  *
  * tint  = hue used for the cover wash, 0-360
  * price = pence, so arithmetic never drifts
+ *
+ * There are deliberately no ratings or reviews in here. Reviews are only
+ * ever written by people who bought the pack through the site; seeding
+ * them would be a fake review, which the Digital Markets, Competition and
+ * Consumers Act 2024 bans outright.
  */
 
 const SUBJECTS = [
@@ -34,11 +39,8 @@ const SAMPLE_NOTES = [
     pages: 96,
     format: "Typed PDF",
     price: 1150,
-    listPrice: 1400,
-    rating: 4.9,
-    ratingCount: 214,
     updated: "Sep 2026",
-    seller: { name: "Priya Nandakumar", grade: "First · 82%", sales: 1840, since: "2024" },
+    seller: { name: "Priya Nandakumar", grade: "First · 82%", since: "2024" },
     summary:
       "Every mechanism on the second-year organic paper, drawn arrow by arrow with the electron source labelled. Written after marking two years of tutorial sheets, so the common wrong arrows are called out where students actually draw them.",
     contents: [
@@ -54,12 +56,6 @@ const SAMPLE_NOTES = [
       "96-page searchable PDF, A4, printer-friendly",
       "40 worked past-paper mechanisms with mark-scheme wording",
       "One-page revision poster of all reagent conditions",
-      "Free updates when the 2027 spec lands",
-    ],
-    reviews: [
-      { name: "Hannah O.", rating: 5, when: "3 weeks ago", verified: true, text: "The decision tree on page 11 is the thing I'd been trying to build all term. Went from guessing SN1/SN2 to getting it right every time." },
-      { name: "Rob A.", rating: 5, when: "2 months ago", verified: true, text: "Printed it double-sided and annotated it. The 'wrong arrows' callouts are what makes this better than the lecture handouts." },
-      { name: "Dee M.", rating: 4, when: "4 months ago", verified: true, text: "Excellent for mechanisms. Less useful if you also need the spectroscopy half of the module." },
     ],
   },
   {
@@ -72,10 +68,8 @@ const SAMPLE_NOTES = [
     pages: 64,
     format: "PDF + Anki",
     price: 800,
-    rating: 4.8,
-    ratingCount: 331,
     updated: "Aug 2026",
-    seller: { name: "Tomás Requena", grade: "A* · 96%", sales: 2610, since: "2023" },
+    seller: { name: "Tomás Requena", grade: "A* · 96%", since: "2023" },
     summary:
       "Twelve model essays for the 25-mark question, each mapped to the six topic areas an examiner looks for, plus the linking sentences that pull marks across modules.",
     contents: [
@@ -91,10 +85,6 @@ const SAMPLE_NOTES = [
       "Anki deck of 180 linking sentences",
       "Four-week revision timetable",
     ],
-    reviews: [
-      { name: "Isla F.", rating: 5, when: "1 month ago", verified: true, text: "Went from 14/25 to 21/25 in my mock. The linking sentence bank is the whole trick." },
-      { name: "Nathan B.", rating: 5, when: "3 months ago", verified: true, text: "Clear, well organised, and the Anki deck imported cleanly." },
-    ],
   },
   {
     id: "math-proofs",
@@ -106,10 +96,8 @@ const SAMPLE_NOTES = [
     pages: 78,
     format: "Handwritten scan",
     price: 900,
-    rating: 4.7,
-    ratingCount: 128,
     updated: "Jun 2026",
-    seller: { name: "Wei Zhang", grade: "First · 88%", sales: 940, since: "2024" },
+    seller: { name: "Wei Zhang", grade: "First · 88%", since: "2024" },
     summary:
       "Handwritten in fountain pen at 600 dpi. Each proof is stated, then rebuilt line by line with the step that carries the mark circled in red.",
     contents: [
@@ -125,10 +113,6 @@ const SAMPLE_NOTES = [
       "Red-pen annotations marking where credit is earned",
       "Printable proof-writing checklist",
     ],
-    reviews: [
-      { name: "Aoife C.", rating: 5, when: "6 weeks ago", verified: true, text: "Handwriting is genuinely legible and the OCR layer means search works. Rank-nullity finally clicked." },
-      { name: "Marcus D.", rating: 4, when: "5 months ago", verified: true, text: "Great content. I'd have liked more worked examples alongside the proofs." },
-    ],
   },
   {
     id: "econ-hl",
@@ -140,10 +124,8 @@ const SAMPLE_NOTES = [
     pages: 52,
     format: "Typed PDF",
     price: 750,
-    rating: 4.9,
-    ratingCount: 186,
     updated: "Sep 2026",
-    seller: { name: "Sofia Lindqvist", grade: "7/7 HL", sales: 1320, since: "2024" },
+    seller: { name: "Sofia Lindqvist", grade: "7/7 HL", since: "2024" },
     summary:
       "Every diagram the HL syllabus can ask for, drawn to scale with axes labelled the way the mark scheme wants, plus the two evaluation sentences that reliably earn the last band.",
     contents: [
@@ -158,9 +140,6 @@ const SAMPLE_NOTES = [
       "Evaluation sentence bank sorted by command term",
       "Paper 3 calculation walkthroughs",
     ],
-    reviews: [
-      { name: "Kenji T.", rating: 5, when: "2 weeks ago", verified: true, text: "The command-term sentence bank is worth the price on its own." },
-    ],
   },
   {
     id: "med-neuro",
@@ -173,10 +152,8 @@ const SAMPLE_NOTES = [
     cards: 612,
     format: "Anki deck",
     price: 1400,
-    rating: 4.8,
-    ratingCount: 297,
     updated: "Jul 2026",
-    seller: { name: "Amara Okonkwo", grade: "Distinction", sales: 3180, since: "2022" },
+    seller: { name: "Amara Okonkwo", grade: "Distinction", since: "2022" },
     summary:
       "Image-occlusion cards built on labelled tract diagrams and coronal sections. Cloze order follows the spotter exam, not the textbook, so recall matches how you are tested.",
     contents: [
@@ -192,10 +169,6 @@ const SAMPLE_NOTES = [
       "Suggested 6-week scheduling preset",
       "PDF of the source diagrams, unoccluded",
     ],
-    reviews: [
-      { name: "Leo P.", rating: 5, when: "1 month ago", verified: true, text: "Passed the spotter with this alone. Occlusion cards are made properly, not auto-generated." },
-      { name: "Sana R.", rating: 5, when: "3 months ago", verified: true, text: "Scheduling preset stopped me burning out in week two." },
-    ],
   },
   {
     id: "psy-cog",
@@ -207,10 +180,8 @@ const SAMPLE_NOTES = [
     pages: 58,
     format: "Typed PDF",
     price: 650,
-    rating: 4.6,
-    ratingCount: 91,
     updated: "May 2026",
-    seller: { name: "Grace Whitfield", grade: "2:1 · 68%", sales: 460, since: "2025" },
+    seller: { name: "Grace Whitfield", grade: "2:1 · 68%", since: "2025" },
     summary:
       "One table per topic: the study, the year, what it showed, and the two criticisms that get cited back at it. Built for essays where you need a counterpoint in the next sentence.",
     contents: [
@@ -225,9 +196,6 @@ const SAMPLE_NOTES = [
       "Six essay planning grids",
       "Reference list formatted in APA 7",
     ],
-    reviews: [
-      { name: "Tunde A.", rating: 5, when: "2 months ago", verified: true, text: "The criticism column saved me hours of reading. APA list is accurate." },
-    ],
   },
   {
     id: "law-contract",
@@ -239,10 +207,8 @@ const SAMPLE_NOTES = [
     pages: 44,
     format: "Typed PDF",
     price: 1000,
-    rating: 4.7,
-    ratingCount: 143,
     updated: "Aug 2026",
-    seller: { name: "Oliver Mensah", grade: "First · 79%", sales: 780, since: "2023" },
+    seller: { name: "Oliver Mensah", grade: "First · 79%", since: "2023" },
     summary:
       "116 cases on one grid: facts in a line, ratio in a line, and the principle it is cited for. Formatted to be readable in the two minutes you get per problem question.",
     contents: [
@@ -258,10 +224,6 @@ const SAMPLE_NOTES = [
       "Two fully worked IRAC problem answers",
       "Printable one-page remedies flowchart",
     ],
-    reviews: [
-      { name: "Ella S.", rating: 5, when: "5 weeks ago", verified: true, text: "Exactly what a case grid should be. No padding." },
-      { name: "Jonah K.", rating: 4, when: "4 months ago", verified: true, text: "Solid, though I added a few cases from my own seminars." },
-    ],
   },
   {
     id: "phys-thermo",
@@ -273,10 +235,8 @@ const SAMPLE_NOTES = [
     pages: 71,
     format: "Typed PDF",
     price: 950,
-    rating: 4.8,
-    ratingCount: 112,
     updated: "Apr 2026",
-    seller: { name: "Wei Zhang", grade: "First · 88%", sales: 940, since: "2024" },
+    seller: { name: "Wei Zhang", grade: "First · 88%", since: "2024" },
     summary:
       "Each of the standard results derived from the first law without skipping algebra, with the physical assumption stated at every line where one is made.",
     contents: [
@@ -291,9 +251,6 @@ const SAMPLE_NOTES = [
       "Assumption checklist for each derivation",
       "18 past-paper questions with full solutions",
     ],
-    reviews: [
-      { name: "Priya N.", rating: 5, when: "3 months ago", verified: true, text: "The assumption checklist is the part nobody else writes down." },
-    ],
   },
   {
     id: "gcse-maths",
@@ -305,10 +262,8 @@ const SAMPLE_NOTES = [
     pages: 40,
     format: "Typed PDF",
     price: 500,
-    rating: 4.5,
-    ratingCount: 402,
     updated: "Sep 2026",
-    seller: { name: "Grace Whitfield", grade: "Grade 9", sales: 460, since: "2025" },
+    seller: { name: "Grace Whitfield", grade: "Grade 9", since: "2025" },
     summary:
       "The 30 questions that decide a grade 7 from a grade 9, each shown twice: the answer that gets full marks, and the near-miss that loses two.",
     contents: [
@@ -322,10 +277,6 @@ const SAMPLE_NOTES = [
       "40-page PDF with 30 paired worked examples",
       "Checklist of phrases that earn method marks",
     ],
-    reviews: [
-      { name: "Maya H.", rating: 5, when: "2 weeks ago", verified: true, text: "Showing the near-miss answer next to the full-mark one is such a good idea." },
-      { name: "Danny W.", rating: 4, when: "2 months ago", verified: true, text: "Good value. Wish it covered foundation tier too." },
-    ],
   },
   {
     id: "cs-ds",
@@ -337,10 +288,8 @@ const SAMPLE_NOTES = [
     pages: 36,
     format: "PDF + code",
     price: 700,
-    rating: 4.6,
-    ratingCount: 158,
     updated: "Jul 2026",
-    seller: { name: "Oliver Mensah", grade: "First · 79%", sales: 780, since: "2023" },
+    seller: { name: "Oliver Mensah", grade: "First · 79%", since: "2023" },
     summary:
       "Time and space complexity for every structure on the module, with the Java implementation next to it and a note on when the average case stops being the case you get.",
     contents: [
@@ -355,9 +304,6 @@ const SAMPLE_NOTES = [
       "Runnable Java reference implementations",
       "Big-O comparison poster, A3 printable",
     ],
-    reviews: [
-      { name: "Ines V.", rating: 5, when: "1 month ago", verified: true, text: "Code compiles, comments explain the tradeoffs. Better than the textbook appendix." },
-    ],
   },
   {
     id: "hist-britain",
@@ -369,10 +315,8 @@ const SAMPLE_NOTES = [
     pages: 62,
     format: "Typed PDF",
     price: 750,
-    rating: 4.7,
-    ratingCount: 74,
     updated: "Mar 2026",
-    seller: { name: "Amara Okonkwo", grade: "First · 74%", sales: 3180, since: "2022" },
+    seller: { name: "Amara Okonkwo", grade: "First · 74%", since: "2022" },
     summary:
       "A dated spine of the century down the left, and the historians who argue about each stretch of it down the right, so essays can move from event to interpretation in one line.",
     contents: [
@@ -387,9 +331,6 @@ const SAMPLE_NOTES = [
       "Historiography column with 40 named positions",
       "Twelve planned essay answers",
     ],
-    reviews: [
-      { name: "Fergus L.", rating: 5, when: "4 months ago", verified: true, text: "The two-column layout is unusually good for essay writing." },
-    ],
   },
   {
     id: "psy-spss",
@@ -401,10 +342,8 @@ const SAMPLE_NOTES = [
     pages: 48,
     format: "PDF + dataset",
     price: 600,
-    rating: 4.4,
-    ratingCount: 66,
     updated: "Feb 2026",
-    seller: { name: "Sofia Lindqvist", grade: "2:1 · 66%", sales: 1320, since: "2024" },
+    seller: { name: "Sofia Lindqvist", grade: "2:1 · 66%", since: "2024" },
     summary:
       "Screenshot-by-screenshot routes through every test on the lab report brief, ending each time with the sentence you paste into the results section.",
     contents: [
@@ -418,9 +357,6 @@ const SAMPLE_NOTES = [
       "48-page walkthrough PDF",
       "Practice dataset (.sav and .csv)",
       "APA results-sentence templates",
-    ],
-    reviews: [
-      { name: "Bea N.", rating: 4, when: "6 months ago", verified: true, text: "Screenshots are from SPSS 29 — still easy to follow on 30." },
     ],
   },
 ];
