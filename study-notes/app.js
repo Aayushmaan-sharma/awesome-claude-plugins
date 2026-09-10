@@ -318,7 +318,7 @@
           </a>
           <div class="searchbar">
             <label class="sr-only" for="q">Search notes</label>
-            <input id="q" type="search" placeholder="Search by module, course code or topic" autocomplete="off">
+            <input id="q" type="search" placeholder="Search by language, exam board or topic" autocomplete="off">
           </div>
           <nav class="navlinks" aria-label="Main">
             <a class="navlink" href="#/" data-nav data-route="browse">Browse</a>
@@ -373,7 +373,7 @@
         <div class="shell footer__grid">
           <div>
             <p class="footer__brand">${esc(CONFIG.shopName)}</p>
-            <p>A marketplace for student-written study notes. Sellers keep ${100 - CONFIG.platformFeePct}% of each sale.</p>
+            <p>A marketplace for student-written notes in modern foreign languages. Sellers keep ${100 - CONFIG.platformFeePct}% of each sale.</p>
             <p class="footer__legal">
               ${siteValue("legalName")} · Company number ${siteValue("companyNumber")} · VAT ${siteValue("vatNumber")}<br>
               ${siteValue("address")}<br>
@@ -427,8 +427,17 @@
 
   /* ------------------------------------------------------------------ pieces */
 
+  /* A few ruled lines of "writing" so a cover reads as a used page rather
+   * than blank stock. Widths are seeded from the id, so a listing always
+   * draws the same page. */
+  const coverLines = (note) => {
+    const rand = seeded(`${note.id}-cover`);
+    return Array.from({ length: 4 }, () => `<span class="card__line" style="width:${34 + Math.floor(rand() * 44)}%"></span>`).join("");
+  };
+
   const coverMarkup = (note) => `
     <span class="card__margin" aria-hidden="true"></span>
+    <span class="card__lines" aria-hidden="true">${coverLines(note)}</span>
     <span class="card__code mono">${esc(note.course)}</span>
     <span class="card__inst">${esc(note.institution)}</span>
     <span class="card__fmt">${esc(note.format)} · ${esc(unitLabel(note))}</span>
@@ -495,9 +504,9 @@
       <section class="band">
         <div class="shell band__inner">
           <div>
-            <p class="eyebrow">Student-written study notes</p>
-            <h1>Sell the notes you <span class="mark">already wrote</span>.</h1>
-            <p class="band__lede">A storefront for lecture notes, essay banks, case grids and flashcard decks. Sellers keep ${100 - CONFIG.platformFeePct}% of every sale; buyers get the file the moment they check out.</p>
+            <p class="eyebrow">Modern foreign languages</p>
+            <h1>Study notes for modern languages.</h1>
+            <p class="band__lede">Vocabulary decks, grammar tables, speaking answers, and notes on the set films and texts — written by students who took the course. Sellers keep ${100 - CONFIG.platformFeePct}% of every sale; buyers get the file the moment they check out.</p>
             <div class="band__actions">
               <a class="btn btn--primary" href="#/sell" data-nav>List your notes</a>
               <a class="btn btn--ghost" href="#/library" data-nav>Go to your library</a>
@@ -816,7 +825,7 @@
             <div class="formgrid">
               <div class="field">
                 <label for="f-title">Title</label>
-                <input id="f-title" name="title" value="${esc(draft.title)}" placeholder="Reaction Mechanisms, Fully Drawn" required aria-describedby="f-title-hint">
+                <input id="f-title" name="title" value="${esc(draft.title)}" placeholder="German Cases: One Table, Every Ending" required aria-describedby="f-title-hint">
                 <span class="hint" id="f-title-hint">Say what the notes cover, not that they are notes.</span>
               </div>
               <div class="formgrid formgrid--2">
@@ -836,22 +845,22 @@
               <div class="formgrid formgrid--2">
                 <div class="field">
                   <label for="f-course">Course code</label>
-                  <input id="f-course" name="course" value="${esc(draft.course)}" placeholder="CHEM20200 or AQA 7402/3">
+                  <input id="f-course" name="course" value="${esc(draft.course)}" placeholder="AQA 7662 or FREN1001">
                 </div>
                 <div class="field">
                   <label for="f-institution">Institution or exam board</label>
-                  <input id="f-institution" name="institution" value="${esc(draft.institution)}" placeholder="University of Bristol">
+                  <input id="f-institution" name="institution" value="${esc(draft.institution)}" placeholder="AQA specification">
                 </div>
               </div>
               <div class="formgrid formgrid--2">
                 <div class="field">
                   <label for="f-pages">Pages or cards</label>
-                  <input id="f-pages" name="pages" inputmode="numeric" value="${esc(draft.pages)}" placeholder="96">
+                  <input id="f-pages" name="pages" inputmode="numeric" value="${esc(draft.pages)}" placeholder="48">
                 </div>
                 <div class="field">
                   <label for="f-format">Format</label>
                   <select id="f-format" name="format">
-                    ${["Typed PDF", "Handwritten scan", "Anki deck", "PDF + Anki", "PDF + code", "PDF + dataset", "Notion export"]
+                    ${["Typed PDF", "Handwritten scan", "Anki deck", "PDF + Anki", "PDF + audio", "PDF + dataset", "Notion export"]
                       .map((f) => `<option value="${esc(f)}"${draft.format === f ? " selected" : ""}>${esc(f)}</option>`)
                       .join("")}
                   </select>
@@ -864,7 +873,7 @@
                 </div>
                 <div class="field">
                   <label for="f-grade">Result you earned</label>
-                  <input id="f-grade" name="grade" value="${esc(draft.grade)}" placeholder="First · 82%" aria-describedby="f-grade-hint">
+                  <input id="f-grade" name="grade" value="${esc(draft.grade)}" placeholder="A* · 94%" aria-describedby="f-grade-hint">
                   <span class="hint" id="f-grade-hint">Optional. Shown to buyers as your own unverified statement.</span>
                 </div>
               </div>
@@ -874,7 +883,7 @@
               </div>
               <div class="field">
                 <label for="f-contents">Contents, one per line</label>
-                <textarea id="f-contents" name="contents" placeholder="Arrow-pushing conventions&#10;SN1 vs SN2 decision tree&#10;40 worked past-paper mechanisms" aria-describedby="f-contents-hint">${esc(draft.contents)}</textarea>
+                <textarea id="f-contents" name="contents" placeholder="Adjective endings: weak, mixed and strong&#10;Prepositions sorted by case&#10;120 drilled sentences with answers" aria-describedby="f-contents-hint">${esc(draft.contents)}</textarea>
                 <span class="hint" id="f-contents-hint">Buyers scan this before anything else.</span>
               </div>
               <label class="consent">

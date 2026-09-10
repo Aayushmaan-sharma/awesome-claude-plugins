@@ -1,9 +1,9 @@
 The three typefaces bundled in this directory are licensed under the SIL
 Open Font License, Version 1.1. Their copyright holders are:
 
-  Familjen Grotesk
-    Copyright 2021 The Familjen Grotesk Project Authors
-    https://github.com/Familjen-Sthlm/Familjen-Grotesk
+  Source Serif 4
+    Copyright 2014 The Source Serif 4 Project Authors
+    https://github.com/adobe-fonts/source-serif
 
   Instrument Sans
     Copyright 2022 The Instrument Sans Project Authors

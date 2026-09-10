@@ -1,14 +1,15 @@
 # MFL Centre — a storefront for selling study notes
 
-A self-contained shop for lecture notes, essay banks, case grids and flashcard
-decks. No build step, no framework, no dependencies, and no network requests:
-open `index.html` and it runs.
+A self-contained shop for modern-languages study notes — vocabulary decks,
+grammar tables, speaking answers, and notes on set films and texts. No build
+step, no framework, no dependencies, and no network requests: open `index.html`
+and it runs.
 
 ```
 study-notes/
 ├── index.html          page shell
 ├── styles.css          design tokens + components (single dark theme)
-├── catalog.js          sample catalogue — replace with your own listings
+├── catalog.js          sample catalogue (French, German, Spanish, …) — replace it
 ├── policies.js         terms, privacy, refunds, cookies, accessibility, copyright
 ├── app.js              storefront logic — SITE config lives at the top
 ├── fonts/              self-hosted OFL typefaces (+ OFL.txt)
