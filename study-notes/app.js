@@ -79,7 +79,7 @@
   /* Deliberately not stored: name, address, institution, or anything else
    * a download does not need. The email is asked for at each checkout and
    * not kept in the browser afterwards. */
-  const blank = { cart: [], orders: [], listings: [], reviews: [], promo: null };
+  const blank = { cart: [], orders: [], listings: [], reviews: [], promo: null, account: null };
 
   function readStore() {
     try {
@@ -94,7 +94,14 @@
     try {
       localStorage.setItem(
         STORE_KEY,
-        JSON.stringify({ cart: state.cart, orders: state.orders, listings: state.listings, reviews: state.reviews, promo: state.promo }),
+        JSON.stringify({
+          cart: state.cart,
+          orders: state.orders,
+          listings: state.listings,
+          reviews: state.reviews,
+          promo: state.promo,
+          account: state.account,
+        }),
       );
     } catch {
       /* private browsing or storage disabled — the session still works */
@@ -111,6 +118,36 @@
     overlay: null, // "cart" | "checkout" | null
     lastFocus: null,
   };
+
+  /* ------------------------------------------------------------------- account */
+
+  /* There is no server here, so "signing in" records who you say you are and
+   * nothing more. No password is asked for on the sign-in page, and none
+   * should be: a build with no backend has nowhere safe to put one. See
+   * README.md for wiring a real provider. */
+  const signedIn = () => Boolean(state.account);
+
+  function displayName() {
+    if (!state.account) return "You";
+    if (state.account.name) return state.account.name;
+    return state.account.email
+      .split("@")[0]
+      .replace(/[._+-]+/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+
+  function signIn({ provider, email, name }) {
+    state.account = { provider, email, name: name || "", since: Date.now() };
+    writeStore();
+  }
+
+  function signOut() {
+    state.account = null;
+    writeStore();
+    location.hash = "#/";
+    render();
+    toast("Signed out. Anything you bought or listed is still on this device.");
+  }
 
   /* ---------------------------------------------------------------- catalogue */
 
@@ -287,7 +324,8 @@
             <a class="navlink" href="#/" data-nav data-route="browse">Browse</a>
             <a class="navlink" href="#/sell" data-nav data-route="sell">Sell notes</a>
             <a class="navlink" href="#/library" data-nav data-route="library">Library</a>
-            <a class="navlink" href="#/dashboard" data-nav data-route="dashboard">Sales</a>
+            <a class="navlink" href="#/earnings" data-nav data-route="earnings">Earnings</a>
+            <span id="nav-auth"></span>
             <button class="btn btn--sm cartbtn" data-action="open-cart" type="button" id="cart-button" aria-expanded="false">
               Cart <span class="cartbtn__count" id="cart-count" aria-hidden="true">0</span>
               <span class="sr-only" id="cart-count-text">, empty</span>
@@ -360,7 +398,20 @@
       </footer>`;
   }
 
+  const authNavMarkup = () =>
+    signedIn()
+      ? `<button class="navlink navlink--btn" type="button" data-action="sign-out">Sign out</button>`
+      : `<a class="navlink" href="#/signin" data-nav data-route="signin">Sign in</a>`;
+
+  let renderedAuth = null;
+
   function syncChrome() {
+    const auth = signedIn() ? "in" : "out";
+    if (auth !== renderedAuth) {
+      const slot = $("#nav-auth");
+      if (slot) slot.innerHTML = authNavMarkup();
+      renderedAuth = auth;
+    }
     const count = state.cart.length;
     const badge = $("#cart-count");
     if (badge) badge.textContent = String(count);
@@ -740,7 +791,7 @@
       format: draft.format,
       price: Math.max(0, Math.round(parseFloat(draft.price || "0") * 100)),
       updated: new Date().toLocaleDateString(CONFIG.locale, { month: "short", year: "numeric" }),
-      seller: { name: "You", grade: draft.grade },
+      seller: { name: displayName(), grade: draft.grade },
       summary: draft.summary,
       contents: [],
       includes: [],
@@ -858,41 +909,280 @@
       </div>`;
   }
 
-  /* ----------------------------------------------------------- sales overview */
+  /* -------------------------------------------------------------- sign in */
 
-  function dashboardView() {
+  const gateMarkup = (heading, why) => `
+    <div class="shell">
+      <div class="page-head">
+        <p class="eyebrow">Account</p>
+        <h1>${esc(heading)}</h1>
+        <p>${esc(why)}</p>
+      </div>
+      <div class="stack">
+        <div class="empty">
+          <p class="empty__action"><a class="btn btn--primary" href="#/signin" data-nav>Sign in</a></p>
+        </div>
+      </div>
+    </div>`;
+
+  /* A plain monogram, not Google's brand asset: this button does not perform
+   * Google sign-in, so shipping their mark on it would say otherwise. When you
+   * wire the real thing, use Google's official button per their guidelines. */
+  const googleMark = `
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" class="provider__mark">
+      <path d="M20.2 12a8.2 8.2 0 1 1-2.4-5.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+      <path d="M20.2 12h-6.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path>
+    </svg>`;
+
+  function signinView() {
+    if (signedIn()) {
+      return `
+        <div class="shell">
+          <div class="page-head">
+            <p class="eyebrow">Account</p>
+            <h1>You're signed in</h1>
+            <p>Signed in as ${esc(state.account.email)}${state.account.provider === "google" ? " with a Google demo session" : ""}.</p>
+          </div>
+          <div class="stack">
+            <div class="panel authcard">
+              <p class="authnote">Signing out leaves everything on this device — your library, your listings and your earnings stay put.</p>
+              <div class="authactions">
+                <a class="btn btn--primary" href="#/earnings" data-nav>Go to earnings</a>
+                <button class="btn btn--ghost" type="button" data-action="sign-out">Sign out</button>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    return `
+      <div class="shell">
+        <div class="authwrap">
+          <div class="page-head">
+            <p class="eyebrow">Account</p>
+            <h1>Sign in</h1>
+            <p>You need an account to list notes and to be paid for them. Buying doesn't need one.</p>
+          </div>
+          <div class="panel authcard">
+            <div class="demoflag">
+              <span class="demoflag__mark" aria-hidden="true">!</span>
+              <p><b>Demo sign-in — nothing is connected.</b> No password is asked for here, and none should be: a build with no backend has nowhere safe to keep one. Both options below create a local session on this device only.</p>
+            </div>
+
+            <button class="btn btn--wide provider" type="button" data-action="signin-google">
+              ${googleMark} Continue with Google
+            </button>
+            <p class="authnote">Google sign-in isn't wired up in this build, so this creates a demo session instead of asking Google anything.</p>
+
+            <div class="authsep"><span>or</span></div>
+
+            <form id="signin-form" novalidate>
+              <div class="field">
+                <label for="s-email">Email address</label>
+                <input id="s-email" name="email" type="email" autocomplete="email" placeholder="you@university.ac.uk" required aria-describedby="s-email-hint signin-error">
+                <span class="hint" id="s-email-hint">A real build emails you a one-time link, so there's no password to create, forget or leak.</span>
+              </div>
+              <p class="formerror" id="signin-error" role="alert" hidden></p>
+              <button class="btn btn--primary btn--wide" type="submit">Email me a sign-in link</button>
+            </form>
+
+            <p class="authfoot">Signing in means accepting the <a href="#/policy/terms" data-nav>terms</a> and the <a href="#/policy/privacy" data-nav>privacy policy</a>.</p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* -------------------------------------------------------------- earnings */
+
+  function earnings() {
+    const mineIds = new Set(state.listings.map((n) => n.id));
+    const sales = [];
+    for (const order of state.orders) {
+      for (const id of order.items) {
+        if (!mineIds.has(id)) continue;
+        const note = noteById(id);
+        if (!note) continue;
+        const fee = Math.round((note.price * CONFIG.platformFeePct) / 100);
+        sales.push({ id, title: note.title, at: order.date, ref: order.ref, gross: note.price, fee, net: note.price - fee });
+      }
+    }
+    sales.sort((a, b) => b.at - a.at);
+    const gross = sales.reduce((sum, x) => sum + x.gross, 0);
+    const fee = sales.reduce((sum, x) => sum + x.fee, 0);
+    return { sales, gross, fee, net: gross - fee };
+  }
+
+  function monthlyNet(sales) {
+    const now = new Date();
+    const months = [];
+    for (let i = 5; i >= 0; i -= 1) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ key: `${d.getFullYear()}-${d.getMonth()}`, label: d.toLocaleDateString(CONFIG.locale, { month: "short" }), net: 0 });
+    }
+    const index = new Map(months.map((m) => [m.key, m]));
+    for (const sale of sales) {
+      const d = new Date(sale.at);
+      const bucket = index.get(`${d.getFullYear()}-${d.getMonth()}`);
+      if (bucket) bucket.net += sale.net;
+    }
+    return months;
+  }
+
+  function niceMax(value) {
+    if (value <= 0) return 100;
+    const magnitude = 10 ** Math.floor(Math.log10(value));
+    for (const step of [1, 2, 2.5, 5, 10]) {
+      if (value <= step * magnitude) return step * magnitude;
+    }
+    return 10 * magnitude;
+  }
+
+  const barPath = (x, top, w, h, r) => {
+    const rr = Math.min(r, h, w / 2);
+    return `M${x} ${top + h} V${top + rr} Q${x} ${top} ${x + rr} ${top} H${x + w - rr} Q${x + w} ${top} ${x + w} ${top + rr} V${top + h} Z`;
+  };
+
+  /* Net earnings by month — one series, so one hue and no legend; the title
+   * says what is plotted and the table below carries every value. */
+  function earningsChart(months) {
+    const W = 560;
+    const H = 208;
+    const L = 58;
+    const R = 10;
+    const T = 18;
+    const B = 40;
+    const plotW = W - L - R;
+    const plotH = H - T - B;
+    const max = niceMax(Math.max(...months.map((m) => m.net)));
+    const band = plotW / months.length;
+    const barW = Math.min(24, band * 0.44);
+    const yOf = (v) => T + plotH - (v / max) * plotH;
+    const peak = months.reduce((a, b) => (b.net > a.net ? b : a), months[0]);
+
+    const grid = [0, max / 2, max]
+      .map(
+        (v) =>
+          `<line x1="${L}" y1="${yOf(v).toFixed(1)}" x2="${L + plotW}" y2="${yOf(v).toFixed(1)}" stroke="var(--rule)" stroke-width="1"></line>
+           <text x="${L - 10}" y="${(yOf(v) + 4).toFixed(1)}" text-anchor="end" class="chart__tick">${money(v)}</text>`,
+      )
+      .join("");
+
+    const bars = months
+      .map((m, i) => {
+        const x = L + i * band + (band - barW) / 2;
+        const top = yOf(m.net);
+        const h = T + plotH - top;
+        const label = `${m.label}: ${money(m.net)}`;
+        const mark = m.net > 0 ? `<path d="${barPath(x, top, barW, h, 4)}" fill="var(--accent)"></path>` : "";
+        const value =
+          m === peak && m.net > 0
+            ? `<text x="${(x + barW / 2).toFixed(1)}" y="${(top - 7).toFixed(1)}" text-anchor="middle" class="chart__value">${money(m.net)}</text>`
+            : "";
+        return `<g class="chart__bar" data-tip="${esc(label)}">
+            <rect x="${(L + i * band).toFixed(1)}" y="${T}" width="${band.toFixed(1)}" height="${plotH}" fill="transparent"></rect>
+            ${mark}${value}
+            <text x="${(L + i * band + band / 2).toFixed(1)}" y="${H - 16}" text-anchor="middle" class="chart__tick">${esc(m.label)}</text>
+            <title>${esc(label)}</title>
+          </g>`;
+      })
+      .join("");
+
+    const summary = months.map((m) => `${m.label} ${money(m.net)}`).join(", ");
+    return `
+      <figure class="chart">
+        <figcaption class="chart__title">Net earnings by month <span class="chart__sub">after the ${CONFIG.platformFeePct}% fee, last six months</span></figcaption>
+        <div class="chartwrap">
+          <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Net earnings by month. ${esc(summary)}." preserveAspectRatio="xMidYMid meet">
+            ${grid}${bars}
+          </svg>
+          <div class="charttip" id="charttip" hidden></div>
+        </div>
+      </figure>`;
+  }
+
+  function earningsView() {
+    if (!signedIn()) return gateMarkup("Sign in to see your earnings", "Earnings belong to an account, so we need to know whose they are.");
+
+    const { sales, gross, fee, net } = earnings();
+    const months = monthlyNet(sales);
     const mine = state.listings;
-    const mineIds = new Set(mine.map((n) => n.id));
-    const sold = state.orders.flatMap((o) => o.items.filter((id) => mineIds.has(id)).map((id) => ({ id, order: o })));
-    const gross = sold.reduce((sum, s) => sum + (noteById(s.id)?.price || 0), 0);
-    const fee = Math.round((gross * CONFIG.platformFeePct) / 100);
 
     return `
       <div class="shell">
         <div class="page-head">
           <p class="eyebrow">Seller</p>
-          <h1>Your sales</h1>
-          <p>Everything you've listed, and what it has earned. Figures cover orders placed in this browser.</p>
+          <h1>Earnings</h1>
+          <p>Signed in as ${esc(state.account.email)}. Figures cover orders placed in this browser.</p>
         </div>
-        <div class="salesgrid">
-          <div class="tile"><p class="tile__num">${mine.length}</p><p class="tile__label">Listings live</p></div>
-          <div class="tile"><p class="tile__num">${sold.length}</p><p class="tile__label">Copies sold</p></div>
-          <div class="tile"><p class="tile__num">${money(gross)}</p><p class="tile__label">Gross sales</p></div>
-          <div class="tile"><p class="tile__num">${money(gross - fee)}</p><p class="tile__label">Your earnings</p></div>
-        </div>
-        <div class="stack">
+
+        <section class="balance" aria-labelledby="balance-head">
+          <div>
+            <p class="hero__label" id="balance-head">Earned after fees</p>
+            <p class="hero__value">${money(net)}</p>
+            <p class="hero__sub">Available to pay out. Nothing has been paid out yet — payouts start once a payment provider is connected.</p>
+          </div>
+          <dl class="kpis">
+            <div class="kpi"><dt>Gross sales</dt><dd>${money(gross)}</dd></div>
+            <div class="kpi"><dt>${esc(CONFIG.shopName)} fee</dt><dd>−${money(fee)}</dd></div>
+            <div class="kpi"><dt>Copies sold</dt><dd>${sales.length}</dd></div>
+            <div class="kpi"><dt>Listings live</dt><dd>${mine.length}</dd></div>
+          </dl>
+        </section>
+
+        ${
+          sales.length
+            ? earningsChart(months)
+            : `<div class="empty empty--chart">
+                 <h3>No sales yet</h3>
+                 <p>${mine.length ? "Your listings are live. Earnings appear here the first time someone buys one." : "List a note pack and your earnings will show up here."}</p>
+                 ${mine.length ? "" : '<p class="empty__action"><a class="btn btn--primary" href="#/sell" data-nav>List your notes</a></p>'}
+               </div>`
+        }
+
+        ${
+          sales.length
+            ? `<section class="section" aria-labelledby="sales-head">
+                 <h2 id="sales-head" class="section__head">Every sale</h2>
+                 <div class="panel panel--flush">
+                   <div class="tablewrap">
+                     <table class="table">
+                       <caption class="sr-only">Every sale, newest first</caption>
+                       <thead><tr><th scope="col">Date</th><th scope="col">Listing</th><th scope="col">Order</th><th scope="col">Buyer paid</th><th scope="col">Fee</th><th scope="col">You keep</th></tr></thead>
+                       <tbody>
+                         ${sales
+                           .map(
+                             (x) => `<tr>
+                               <td>${new Date(x.at).toLocaleDateString(CONFIG.locale)}</td>
+                               <td>${esc(x.title)}</td>
+                               <td><span class="mono cellsub">${esc(x.ref)}</span></td>
+                               <td>${money(x.gross)}</td>
+                               <td>−${money(x.fee)}</td>
+                               <td>${money(x.net)}</td>
+                             </tr>`,
+                           )
+                           .join("")}
+                       </tbody>
+                     </table>
+                   </div>
+                 </div>
+               </section>`
+            : ""
+        }
+
+        <section class="section" aria-labelledby="listings-head">
+          <h2 id="listings-head" class="section__head">Your listings</h2>
           ${
             mine.length
               ? `<div class="panel panel--flush">
                    <div class="tablewrap">
                      <table class="table">
-                       <caption class="sr-only">Your listings and their sales</caption>
+                       <caption class="sr-only">Your listings and what each has earned</caption>
                        <thead><tr><th scope="col">Listing</th><th scope="col">Level</th><th scope="col">Price</th><th scope="col">Sold</th><th scope="col">Earned</th></tr></thead>
                        <tbody>
                          ${mine
                            .map((n) => {
-                             const copies = sold.filter((s) => s.id === n.id).length;
-                             const earned = Math.round(copies * n.price * (1 - CONFIG.platformFeePct / 100));
+                             const copies = sales.filter((x) => x.id === n.id).length;
+                             const earned = sales.filter((x) => x.id === n.id).reduce((sum, x) => sum + x.net, 0);
                              return `<tr>
                                <td><button class="linkbtn linkbtn--strong" type="button" data-action="open-note" data-id="${esc(n.id)}">${esc(n.title)}</button><br><span class="mono cellsub">${esc(n.course)}</span></td>
                                <td>${esc(n.level)}</td>
@@ -912,7 +1202,7 @@
                    <p class="empty__action"><a class="btn btn--primary" href="#/sell" data-nav>List your notes</a></p>
                  </div>`
           }
-        </div>
+        </section>
       </div>`;
   }
 
@@ -1061,7 +1351,7 @@
             </div>
             <div class="field">
               <label for="c-email">Email for the download</label>
-              <input id="c-email" name="email" type="email" autocomplete="email" placeholder="alex@university.ac.uk" required aria-describedby="c-email-hint checkout-error">
+              <input id="c-email" name="email" type="email" autocomplete="email" value="${esc(state.account?.email || "")}" placeholder="alex@university.ac.uk" required aria-describedby="c-email-hint checkout-error">
               <span class="hint" id="c-email-hint">Used to send the file and the receipt, and nothing else. We don't ask for your name or address because a download doesn't need them.</span>
             </div>
             <div class="receipt">
@@ -1258,7 +1548,7 @@
       updated: new Date().toLocaleDateString(CONFIG.locale, { month: "short", year: "numeric" }),
       createdAt: Date.now(),
       mine: true,
-      seller: { name: "You", grade: (draft.grade || "").trim(), since: String(new Date().getFullYear()) },
+      seller: { name: displayName(), grade: (draft.grade || "").trim(), since: String(new Date().getFullYear()) },
       summary: (draft.summary || "").trim() || "No summary yet — add one to help buyers decide.",
       contents: contents.length ? contents : [["Contents to be added", 0]],
       includes: [`${Number(draft.pages) || "?"} ${draft.format.includes("Anki") ? "cards" : "pages"}, ${draft.format}`, "Instant download after purchase"],
@@ -1286,12 +1576,57 @@
     }
     if (!owns(noteId) || hasReviewed(noteId)) return;
 
-    /* `by` is the display name a real backend would attach to the buyer's
-     * account. Locally there is no account, so the review is yours. */
-    state.reviews.push({ id: `r-${Date.now().toString(36)}`, noteId, rating, text, at: Date.now(), by: "You" });
+    /* `by` is the display name the buyer's account carries. */
+    state.reviews.push({ id: `r-${Date.now().toString(36)}`, noteId, rating, text, at: Date.now(), by: displayName() });
     writeStore();
     renderView();
     toast("Review published");
+  }
+
+  function submitSignin(event) {
+    event.preventDefault();
+    const field = $("#s-email");
+    const email = field.value.trim();
+    const error = $("#signin-error");
+    field.removeAttribute("aria-invalid");
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      field.setAttribute("aria-invalid", "true");
+      showError(error, "Enter an email address we can send the sign-in link to.");
+      field.focus();
+      return;
+    }
+    signIn({ provider: "email", email });
+    location.hash = "#/earnings";
+    toast("Signed in. A real build would email you a link first.");
+  }
+
+  /* Deliberately does not open anything that looks like a Google password
+   * screen — this build cannot talk to Google, and a page that pretended to
+   * would be a phishing lesson, not a demo. */
+  function signinWithGoogle() {
+    signIn({ provider: "google", email: "demo.seller@example.com", name: "Demo Seller" });
+    location.hash = "#/earnings";
+    toast("Signed in with a demo account — Google isn't connected in this build.");
+  }
+
+  function bindChartTooltip() {
+    const wrap = $(".chartwrap");
+    const tip = $("#charttip");
+    if (!wrap || !tip) return;
+    const hide = () => {
+      tip.hidden = true;
+    };
+    wrap.addEventListener("pointerleave", hide);
+    wrap.addEventListener("pointermove", (event) => {
+      const bar = event.target.closest(".chart__bar");
+      if (!bar) return hide();
+      const box = wrap.getBoundingClientRect();
+      tip.textContent = bar.dataset.tip;
+      tip.hidden = false;
+      const x = event.clientX - box.left;
+      tip.style.left = `${Math.max(4, Math.min(box.width - tip.offsetWidth - 4, x - tip.offsetWidth / 2))}px`;
+      tip.style.top = `${Math.max(0, event.clientY - box.top - tip.offsetHeight - 12)}px`;
+    });
   }
 
   function clearAllData() {
@@ -1300,7 +1635,7 @@
     } catch {
       /* nothing stored to clear */
     }
-    Object.assign(state, blank, { cart: [], orders: [], listings: [], reviews: [], promo: null });
+    Object.assign(state, blank, { cart: [], orders: [], listings: [], reviews: [], promo: null, account: null });
     render();
     toast("Everything this site stored on your device has been deleted");
   }
@@ -1312,7 +1647,8 @@
     const [head, id] = hash.split("/");
     if (head === "note" && id) return { name: "note", id };
     if (head === "policy" && id) return { name: "policy", id };
-    if (["sell", "library", "dashboard"].includes(head)) return { name: head, id: null };
+    if (head === "dashboard") return { name: "earnings", id: null }; // old link
+    if (["sell", "library", "earnings", "signin"].includes(head)) return { name: head, id: null };
     return { name: "browse", id: null };
   }
 
@@ -1332,13 +1668,26 @@
         });
     } else if (name === "policy") {
       view.innerHTML = policyView(id);
+    } else if (name === "signin") {
+      view.innerHTML = signinView();
+      const form = $("#signin-form");
+      if (form) form.addEventListener("submit", submitSignin);
     } else if (name === "sell") {
+      if (!signedIn()) {
+        view.innerHTML = gateMarkup("Sign in to list notes", "Listings are tied to an account so buyers know who wrote them and so you can be paid.");
+        syncChrome();
+        return;
+      }
       view.innerHTML = sellView();
       const form = $("#sell-form");
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         publishListing(form);
       });
+      /* Only the preview redraws as you type. Re-rendering the whole form
+       * would take focus away mid-field and discard an edit that had not
+       * been committed to the draft yet. Selects fire `input` too, so one
+       * listener covers every control. */
       form.addEventListener("input", (e) => {
         if (!e.target.name || e.target.type === "checkbox") return;
         draft[e.target.name] = e.target.value;
@@ -1349,15 +1698,11 @@
           preview.innerHTML = fresh.querySelector(".preview-sticky").innerHTML;
         }
       });
-      form.addEventListener("change", (e) => {
-        if (!e.target.name || e.target.type === "checkbox") return;
-        draft[e.target.name] = e.target.value;
-        renderView();
-      });
     } else if (name === "library") {
       view.innerHTML = libraryView();
-    } else if (name === "dashboard") {
-      view.innerHTML = dashboardView();
+    } else if (name === "earnings") {
+      view.innerHTML = earningsView();
+      bindChartTooltip();
     } else {
       view.innerHTML = browseView();
     }
@@ -1440,6 +1785,12 @@
       }
       case "clear-data":
         clearAllData();
+        break;
+      case "sign-out":
+        signOut();
+        break;
+      case "signin-google":
+        signinWithGoogle();
         break;
       case "back":
         location.hash = "#/";

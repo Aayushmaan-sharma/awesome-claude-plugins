@@ -122,7 +122,9 @@ const POLICIES = {
       {
         h: "What we ask you for",
         body: [
-          "At checkout: your email address. It is used to send the download and the receipt, and nothing else. We do not ask for your name, your address, your course or your institution, because we do not need them to give you a file.",
+          "At checkout: your email address. It is used to send the download and the receipt, and nothing else. We do not ask for your address, your course or your institution, because we do not need them to give you a file.",
+          "If you open a seller account: your email address, and the name your sign-in provider gives us if you use one. Sellers need an account because we have to know who to pay. Buying needs no account.",
+          "We never ask for a password on this site. Sign-in is a one-time link sent to your email, or a provider you already trust — so there is no password here to leak.",
           "If you list notes: the listing content you write. That is published, so treat it as public.",
           "If you review a pack you bought: your rating and review text, published against the listing.",
         ],
@@ -130,7 +132,7 @@ const POLICIES = {
       {
         h: "What is kept in your browser",
         body: [
-          "Under the key mflcentre.v1 in local storage, this site keeps your cart, your orders, any listings you published and any reviews you left. It stays on your device until you clear it, is never sent anywhere, and is not readable by us.",
+          "Under the key mflcentre.v1 in local storage, this site keeps your cart, your orders, any listings you published, any reviews you left, and your signed-in account if you have one. It stays on your device until you clear it, is never sent anywhere, and is not readable by us.",
           "The cookies page lists it in full, and the clear-data button there removes it.",
         ],
       },
@@ -143,13 +145,13 @@ const POLICIES = {
       {
         h: "How long we keep it",
         body: [
-          "Order records, including the email address attached to them, are kept for six years, because tax law requires it. Reviews stay published until you delete them or the listing goes. Local storage lasts until you clear it.",
+          "Order records, including the email address attached to them, are kept for six years, because tax law requires it. Seller accounts are kept while the account is open and for six years after it closes, for the same reason. Reviews stay published until you delete them or the listing goes. Local storage lasts until you clear it.",
         ],
       },
       {
         h: "Who else sees it",
         body: [
-          "Once a payment provider is connected, it will see what it needs to take the payment, and it will be named here. Nobody else. We do not sell data and we do not share it for advertising.",
+          "Once a payment provider is connected, it will see what it needs to take the payment, and it will be named here. If you sign in with Google, Google will know you signed in here — the same as anywhere else you use it. Nobody else. We do not sell data and we do not share it for advertising.",
         ],
       },
       {
@@ -225,6 +227,7 @@ const POLICIES = {
               "Your orders — so your library keeps working and you can download again.",
               "Listings you published — so they are still there when you come back.",
               "Reviews you left — so the site knows you already reviewed a pack.",
+              "Your signed-in account, so you stay signed in between visits.",
             ],
           },
           "It never leaves your device, has no expiry, and identifies nothing about you. There is no advertising or analytics identifier here.",

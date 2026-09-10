@@ -55,6 +55,7 @@ const PAIRS = [
   ["ink-3", "surface", 4.5, "hints and page numbers on a card"],
   ["accent", "paper", 4.5, "accent marks on the page"],
   ["accent", "surface", 4.5, "accent marks on a card"],
+  ["accent-hi", "surface", 3, "a chart bar under the pointer"],
   ["tick", "surface", 4.5, "success text on a card"],
   ["tick", "paper", 4.5, "success text on the page"],
   ["pen", "surface", 4.5, "error text on a card"],

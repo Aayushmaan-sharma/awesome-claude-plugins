@@ -38,8 +38,12 @@ node build-artifact.mjs          # -> dist/artifact.html (single file, fonts inl
 - **Reviews** — only a buyer who owns a pack can review it, and every review
   shown is a real one. Nothing is seeded.
 - **Selling** — listing form with a live card preview, a copyright declaration,
-  and a payout breakdown net of the platform fee.
-- **Sales** — copies sold and earnings per listing.
+  and a payout breakdown net of the platform fee. Requires an account.
+- **Earnings** — what you've made after fees as the headline figure, gross and
+  fee alongside it, net earnings by month, every individual sale, and per-listing
+  totals. Requires an account.
+- **Accounts** — sign in by email link or with Google. See below: neither is
+  connected, and neither asks for a password.
 
 State lives in `localStorage` under `mflcentre.v1` and never leaves the device.
 
@@ -60,6 +64,29 @@ The six policy pages in `policies.js` are drafts written against what this code
 actually does. They are not legal advice — have a solicitor read them, and
 rewrite them the moment you add a backend, because most of what privacy and
 cookies say stops being true then.
+
+## Sign-in is not connected either
+
+`#/signin` offers the two options a notes marketplace normally offers — a one-time
+email link, and Google — and **neither is wired to anything**. Both create a local
+session so the seller pages have someone to belong to.
+
+Two deliberate choices worth keeping when you wire the real thing:
+
+- **No password field, anywhere.** A front end with no backend has nowhere safe to
+  put a password, and students reuse passwords. Magic links and federated sign-in
+  avoid the problem rather than managing it. If you do add passwords, they are
+  hashed server-side with argon2/bcrypt and never touch `localStorage`.
+- **No imitation Google screen.** The button carries a plain monogram, not Google's
+  brand asset, because it does not perform Google sign-in. A page that mimicked
+  Google's login to collect a password would be a phishing kit, whatever the intent.
+  When you connect the real thing, use [Google Identity Services](https://developers.google.com/identity/gsi/web/guides/overview)
+  and its official button, verify the returned ID token **on your server** against
+  Google's JWKS, and check `aud`, `iss` and `exp` before trusting it.
+
+Replace `signIn()` in `app.js` with a call that stores a session your server
+issued, and treat everything the browser says about identity as a claim until the
+server has checked it.
 
 ## Payments are not connected
 
