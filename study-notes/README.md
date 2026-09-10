@@ -45,6 +45,10 @@ node build-artifact.mjs          # -> dist/artifact.html (single file, fonts inl
   totals. Requires an account.
 - **Accounts** — sign in by email link or with Google. See below: neither is
   connected, and neither asks for a password.
+- **Theme** — light, dark, or match system, from the header. The choice is
+  written to `data-appearance` rather than `data-theme`, which the Claude
+  Artifacts viewer owns; "match system" follows both that host stamp and
+  `prefers-color-scheme`, live.
 
 State lives in `localStorage` under `mflcentre.v1` and never leaves the device.
 
@@ -155,9 +159,11 @@ terms and asked for immediate delivery, which is what makes the waiver of the
   rail and the per-subject cover tint (`tint` is a hue, 0–360). Prices are in
   pence so arithmetic never drifts.
 - **Identity** — palette, type scale and spacing are custom properties at the
-  top of `styles.css`. The design commits to one look — a black desk with white
-  paper on it — so there is no light variant and no `prefers-color-scheme`
-  block; `--sheet-*` are the paper colours, everything else is the desk. Change
-  a colour and re-run `check-a11y.mjs`.
+  top of `styles.css`. Dark is the base and the default: `:root` carries it
+  complete, so a page that never runs JS still renders a whole theme. Light is
+  a designed alternate under `[data-appearance="light"]`, redefining only the
+  tokens that change — its own steps against its own grounds, not an inversion.
+  `--sheet-*` are the paper colours and stay the same in both. Change a colour
+  and re-run `check-a11y.mjs`, which checks both themes.
 - **Fee and currency** — `CONFIG` at the top of `app.js` (`platformFeePct`,
   `currency`, `locale`, `promos`).

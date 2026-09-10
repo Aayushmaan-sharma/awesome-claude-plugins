@@ -6,9 +6,10 @@
  * not a copy. Exits non-zero if any pair falls below its WCAG 2.2 threshold:
  * 4.5:1 for text, 3:1 for the boundary of a control the user has to find.
  *
- * The design is single-theme: a black desk with white paper on it. Text sits
- * on one of two grounds, so both sets are checked — the dark UI surfaces, and
- * the white sheets used for covers, preview pages and cart thumbnails.
+ * Both themes are checked, and within each the two grounds the design uses:
+ * the UI surfaces, and the white sheets used for covers, preview pages and
+ * cart thumbnails. Light only redefines the tokens that change, so it is
+ * merged over dark here exactly as the cascade merges it in the browser.
  *
  * 1.4.11 asks whether a control's edge is discernible against what sits behind
  * it, not whether its border contrasts with its own fill. Surfaces filled with
@@ -28,7 +29,8 @@ function tokensFrom(blockStart) {
   return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map(([, k, v]) => [k, v.toLowerCase()]));
 }
 
-const themes = { palette: tokensFrom(":root {") };
+const dark = tokensFrom(":root {");
+const themes = { dark, light: { ...dark, ...tokensFrom(':root[data-appearance="light"] {') } };
 
 const relLum = (hex) => {
   const c = hex
@@ -74,7 +76,7 @@ const PAIRS = [
   ["sheet-ink", "sheet", 4.5, "course code stamped on a cover"],
   ["sheet-ink-2", "sheet", 4.5, "institution, format and page numbers on paper"],
   ["sheet-ink", "sheet-mark", 4.5, "text under a marker stroke on paper"],
-  ["sheet", "paper", 3, "a cover button's edge against the page"],
+  ["sheet-edge", "paper", 3, "the paper's drawn edge against the page"],
   ["sheet-ink", "sheet-line", 3, "ruled text bars against the page they sit on"],
   ["sheet-edge", "sheet", 3, "the grade chip's border on a cover"],
 ];

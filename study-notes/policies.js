@@ -266,14 +266,14 @@ const POLICIES = {
         body: [
           {
             list: [
-              "The site has one theme — a black ground with white paper — and every text and border colour pair on both of those grounds is checked against the WCAG contrast formula by a script in the repository. The build fails if a pair drops below its threshold.",
+              "The site has a light theme and a dark one, and a control in the header to pick either or to follow your system. Every text and border colour pair in both themes — on the interface and on the white paper — is checked against the WCAG contrast formula by a script in the repository. The build fails if a pair drops below its threshold.",
               "Everything works from the keyboard: the shop, the filters, the cart, checkout, the listing form. Focus is always visible.",
               "The cart and checkout dialogs trap focus while open, close on Escape, and return focus to the control that opened them.",
               "Form fields have real labels, errors are announced and tied to the field they belong to, and no error is signalled by colour alone.",
               "The page uses landmarks and one h1 per view, so screen-reader navigation works.",
               "There are no images: covers and previews are drawn in CSS and hidden from assistive technology, with the same information available as text.",
               "Animation is limited, and honours prefers-reduced-motion.",
-              "The page works at 200% zoom and down to 320px wide without sideways scrolling.",
+              "The page works at 200% zoom and down to 320px wide without sideways scrolling, in either theme.",
             ],
           },
         ],

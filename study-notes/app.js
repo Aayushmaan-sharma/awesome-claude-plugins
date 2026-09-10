@@ -79,7 +79,7 @@
   /* Deliberately not stored: name, address, institution, or anything else
    * a download does not need. The email is asked for at each checkout and
    * not kept in the browser afterwards. */
-  const blank = { cart: [], orders: [], listings: [], reviews: [], promo: null, account: null };
+  const blank = { cart: [], orders: [], listings: [], reviews: [], promo: null, account: null, theme: "dark" };
 
   function readStore() {
     try {
@@ -101,6 +101,7 @@
           reviews: state.reviews,
           promo: state.promo,
           account: state.account,
+          theme: state.theme,
         }),
       );
     } catch {
@@ -118,6 +119,67 @@
     overlay: null, // "cart" | "checkout" | null
     lastFocus: null,
   };
+
+  /* --------------------------------------------------------------------- theme */
+
+  /* Three states, the way a theme control should have them: an explicit light
+   * or dark, or "match system". Dark is the default, because that is what this
+   * shop looks like. The choice is written to data-appearance rather than to
+   * data-theme, which the artifact viewer owns — writing there would mean
+   * fighting the host over the same attribute. */
+  const THEMES = ["system", "light", "dark"];
+
+  function resolvedTheme() {
+    if (state.theme === "light" || state.theme === "dark") return state.theme;
+    const stamped = document.documentElement.dataset.theme;
+    if (stamped === "light" || stamped === "dark") return stamped;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+
+  function applyTheme() {
+    document.documentElement.dataset.appearance = resolvedTheme();
+  }
+
+  function setTheme(value) {
+    if (!THEMES.includes(value)) return;
+    state.theme = value;
+    writeStore();
+    applyTheme();
+    syncChrome();
+  }
+
+  function watchSystemTheme() {
+    const follow = () => {
+      if (state.theme === "system") applyTheme();
+    };
+    if (window.matchMedia) {
+      const mq = window.matchMedia("(prefers-color-scheme: light)");
+      if (mq.addEventListener) mq.addEventListener("change", follow);
+      else if (mq.addListener) mq.addListener(follow);
+    }
+    // The artifact viewer stamps data-theme when its reader picks a side.
+    if (typeof MutationObserver === "function") {
+      new MutationObserver(follow).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    }
+  }
+
+  const THEME_ICONS = {
+    system: '<rect x="2.6" y="4.2" width="14.8" height="9.6" rx="1.6"></rect><path d="M7.5 16.6h5"></path>',
+    light:
+      '<circle cx="10" cy="10" r="3.1"></circle><path d="M10 2.7v1.7M10 15.6v1.7M17.3 10h-1.7M4.4 10H2.7M15.16 4.84l-1.2 1.2M6.04 13.96l-1.2 1.2M15.16 15.16l-1.2-1.2M6.04 6.04l-1.2-1.2"></path>',
+    dark: '<path d="M15.9 12.1A6.3 6.3 0 0 1 7.9 4.1a6.5 6.5 0 1 0 8 8Z"></path>',
+  };
+  const THEME_LABELS = { system: "Match system", light: "Light theme", dark: "Dark theme" };
+
+  const themeControlMarkup = () => `
+    <div class="themectl" role="group" aria-label="Colour theme">
+      ${THEMES.map(
+        (name) => `
+        <button class="themebtn" type="button" data-action="theme" data-value="${name}" title="${esc(THEME_LABELS[name])}" aria-label="${esc(THEME_LABELS[name])}" aria-pressed="false">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${THEME_ICONS[name]}</svg>
+        </button>`,
+      ).join("")}
+    </div>`;
 
   /* ------------------------------------------------------------------- account */
 
@@ -326,6 +388,7 @@
             <a class="navlink" href="#/library" data-nav data-route="library">Library</a>
             <a class="navlink" href="#/earnings" data-nav data-route="earnings">Earnings</a>
             <span id="nav-auth"></span>
+            ${themeControlMarkup()}
             <button class="btn btn--sm cartbtn" data-action="open-cart" type="button" id="cart-button" aria-expanded="false">
               Cart <span class="cartbtn__count" id="cart-count" aria-hidden="true">0</span>
               <span class="sr-only" id="cart-count-text">, empty</span>
@@ -406,6 +469,9 @@
   let renderedAuth = null;
 
   function syncChrome() {
+    $$('[data-action="theme"]').forEach((el) => {
+      el.setAttribute("aria-pressed", String(el.dataset.value === state.theme));
+    });
     const auth = signedIn() ? "in" : "out";
     if (auth !== renderedAuth) {
       const slot = $("#nav-auth");
@@ -1644,7 +1710,8 @@
     } catch {
       /* nothing stored to clear */
     }
-    Object.assign(state, blank, { cart: [], orders: [], listings: [], reviews: [], promo: null, account: null });
+    Object.assign(state, blank, { cart: [], orders: [], listings: [], reviews: [], promo: null, account: null, theme: "dark" });
+    applyTheme();
     render();
     toast("Everything this site stored on your device has been deleted");
   }
@@ -1798,6 +1865,9 @@
       case "sign-out":
         signOut();
         break;
+      case "theme":
+        setTheme(el.dataset.value);
+        break;
       case "signin-google":
         signinWithGoogle();
         break;
@@ -1832,6 +1902,8 @@
 
   window.addEventListener("hashchange", onRoute);
 
+  applyTheme();
+  watchSystemTheme();
   mountChrome();
   onRoute();
 })();
