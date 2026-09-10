@@ -7,7 +7,7 @@ open `index.html` and it runs.
 ```
 study-notes/
 ├── index.html          page shell
-├── styles.css          design tokens + components (light and dark)
+├── styles.css          design tokens + components (single dark theme)
 ├── catalog.js          sample catalogue — replace with your own listings
 ├── policies.js         terms, privacy, refunds, cookies, accessibility, copyright
 ├── app.js              storefront logic — SITE config lives at the top
@@ -111,8 +111,9 @@ terms and asked for immediate delivery, which is what makes the waiver of the
   no name, no address, no institution. Nothing about the buyer is persisted
   beyond the order.
 - **Contrast.** `check-a11y.mjs` parses the tokens out of `styles.css` and
-  checks every text and control-boundary pair in both themes against WCAG 2.2.
-  `build-artifact.mjs` runs it first, so a regression fails the build.
+  checks every text and control-boundary pair against WCAG 2.2, on both grounds
+  the design uses — the black desk and the white paper. `build-artifact.mjs`
+  runs it first, so a regression fails the build.
 - **Keyboard and screen reader.** One `h1` per view, landmarks, a skip link,
   labelled controls, dialogs that trap focus and restore it on close, errors
   tied to their field and announced, and no information carried by colour alone.
@@ -126,7 +127,9 @@ terms and asked for immediate delivery, which is what makes the waiver of the
   rail and the per-subject cover tint (`tint` is a hue, 0–360). Prices are in
   pence so arithmetic never drifts.
 - **Identity** — palette, type scale and spacing are custom properties at the
-  top of `styles.css`; both themes are defined there and nowhere else. Change a
-  colour and re-run `check-a11y.mjs`.
+  top of `styles.css`. The design commits to one look — a black desk with white
+  paper on it — so there is no light variant and no `prefers-color-scheme`
+  block; `--sheet-*` are the paper colours, everything else is the desk. Change
+  a colour and re-run `check-a11y.mjs`.
 - **Fee and currency** — `CONFIG` at the top of `app.js` (`platformFeePct`,
   `currency`, `locale`, `promos`).

@@ -510,7 +510,7 @@
           <div class="page${locked ? " page--locked" : ""}">
             <span class="page__margin" aria-hidden="true"></span>
             <div class="page__lines" aria-hidden="true">${lines}</div>
-            ${locked ? `<div class="page__lock"><span>Locked</span><span>The full ${esc(unitLabel(note))} unlock after purchase</span></div>` : ""}
+            ${locked ? `<div class="page__lock"><span>Locked</span><span>Unlocks at checkout</span></div>` : ""}
             <span class="page__num"><span class="sr-only">Sample page </span>${n}</span>
           </div>`;
       })

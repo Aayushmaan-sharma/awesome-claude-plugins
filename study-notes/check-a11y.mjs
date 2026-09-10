@@ -6,6 +6,10 @@
  * not a copy. Exits non-zero if any pair falls below its WCAG 2.2 threshold:
  * 4.5:1 for text, 3:1 for the boundary of a control the user has to find.
  *
+ * The design is single-theme: a black desk with white paper on it. Text sits
+ * on one of two grounds, so both sets are checked — the dark UI surfaces, and
+ * the white sheets used for covers, preview pages and cart thumbnails.
+ *
  * 1.4.11 asks whether a control's edge is discernible against what sits behind
  * it, not whether its border contrasts with its own fill. Surfaces filled with
  * --mark (primary button, grade stamp) all carry a 1px --ink border, so the
@@ -24,10 +28,7 @@ function tokensFrom(blockStart) {
   return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map(([, k, v]) => [k, v.toLowerCase()]));
 }
 
-const themes = {
-  light: tokensFrom(":root {"),
-  dark: tokensFrom(':root[data-theme="dark"] {'),
-};
+const themes = { palette: tokensFrom(":root {") };
 
 const relLum = (hex) => {
   const c = hex
@@ -61,6 +62,14 @@ const PAIRS = [
   ["field-border", "surface", 3, "input border on a card"],
   ["ink", "paper", 3, "primary button edge against the page"],
   ["ink", "surface", 3, "primary button edge against a card"],
+
+  // the white sheets: covers, sample pages, cart thumbnails
+  ["sheet-ink", "sheet", 4.5, "course code stamped on a cover"],
+  ["sheet-ink-2", "sheet", 4.5, "institution, format and page numbers on paper"],
+  ["on-mark", "mark", 4.5, "highlighter over text on paper"],
+  ["sheet-ink", "mark", 4.5, "grade stamp on a cover"],
+  ["sheet", "paper", 3, "a cover button's edge against the page"],
+  ["sheet-ink", "sheet-line", 3, "ruled text bars against the page they sit on"],
 ];
 
 const quiet = process.argv.includes("--quiet");
