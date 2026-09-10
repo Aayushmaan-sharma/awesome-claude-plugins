@@ -144,6 +144,12 @@
     if (!THEMES.includes(value)) return;
     state.theme = value;
     writeStore();
+    // Colours cross-fade only while switching. Leaving the transition on all
+    // the time would make every hover and re-render feel laggy.
+    const root = document.documentElement;
+    root.classList.add("is-theming");
+    clearTimeout(setTheme.timer);
+    setTheme.timer = setTimeout(() => root.classList.remove("is-theming"), 340);
     applyTheme();
     syncChrome();
   }
@@ -416,8 +422,8 @@
    * because a diacritic is what says modern languages. Four flat shapes, so
    * the silhouette still reads at 16px. Colours come from the palette. */
   const logoMarkup = () => `
-    <svg class="brand__mark" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-      <path d="M15.9 0.6 H18.9 L14.5 4.2 H12.1 Z" fill="var(--accent)"></path>
+    <svg class="brand__mark" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false">
+      <path class="brand__accent" d="M15.9 0.6 H18.9 L14.5 4.2 H12.1 Z" fill="var(--accent)"></path>
       <rect x="4.8" y="4.8" width="14.4" height="17.6" rx="2" fill="var(--ink)"></rect>
       <rect x="7.4" y="10" width="9.2" height="2" rx="1" fill="var(--paper)"></rect>
       <rect x="7.4" y="14.8" width="6" height="2" rx="1" fill="var(--paper)"></rect>
@@ -1508,6 +1514,14 @@
     }
   }
 
+  /* Restart a one-shot animation on an element that may already carry it. */
+  function replay(el, className) {
+    if (!el) return;
+    el.classList.remove(className);
+    void el.offsetWidth;
+    el.classList.add(className);
+  }
+
   function toast(message) {
     const host = $("#toast-host");
     if (!host) return;
@@ -1533,6 +1547,7 @@
     const note = noteById(id);
     toast(`${note ? note.title : "Note pack"} added to cart`);
     render();
+    replay($("#cart-count"), "is-bumped");
   }
 
   function removeFromCart(id) {
@@ -1792,14 +1807,18 @@
 
   function onRoute() {
     const next = parseHash();
-    const changed = next.name !== state.route.name || next.id !== state.route.id;
+    const first = !state.started;
+    const changed = first || next.name !== state.route.name || next.id !== state.route.id;
     state.route = next;
     if (state.overlay && changed) state.overlay = null;
     render();
     if (changed) {
-      window.scrollTo({ top: 0, behavior: "auto" });
       const view = $("#view");
-      if (view && state.started) view.focus({ preventScroll: true });
+      replay(view, "is-entering");
+      if (!first) {
+        window.scrollTo({ top: 0, behavior: "auto" });
+        if (view) view.focus({ preventScroll: true });
+      }
     }
     state.started = true;
   }

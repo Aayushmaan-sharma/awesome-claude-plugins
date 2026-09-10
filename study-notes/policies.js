@@ -272,7 +272,7 @@ const POLICIES = {
               "Form fields have real labels, errors are announced and tied to the field they belong to, and no error is signalled by colour alone.",
               "The page uses landmarks and one h1 per view, so screen-reader navigation works.",
               "There are no images: covers and previews are drawn in CSS and hidden from assistive technology, with the same information available as text.",
-              "Animation is limited, and honours prefers-reduced-motion.",
+              "Motion is short and always tied to something you did. Every animation and transition is switched off when your system asks for reduced motion, and nothing on the page starts out invisible, so the first painted frame is already the whole page.",
               "The page works at 200% zoom and down to 320px wide without sideways scrolling, in either theme.",
             ],
           },
