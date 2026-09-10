@@ -34,7 +34,7 @@ for (const [whole, path] of fontRefs) {
 }
 
 const parts = [
-  "<title>Notecase</title>",
+  "<title>MFL Centre</title>",
   `<style>\n${css}</style>`,
   '<div id="app"></div>',
   ...scripts.map((name) => `<script>\n${read(name)}\n</script>`),

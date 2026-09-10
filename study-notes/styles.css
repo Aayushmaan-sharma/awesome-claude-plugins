@@ -22,7 +22,7 @@
   font-display: swap;
 }
 
-/* Notecase — study notes marketplace
+/* MFL Centre — study notes marketplace
    A black desk, white paper, and as little colour as the job needs. Actions
    are bone on black; the one accent is a muted brass used at small sizes;
    marker yellow appears only on the paper, where a highlighter belongs.
@@ -221,23 +221,20 @@ select {
 }
 .brand {
   display: inline-flex;
-  align-items: baseline;
-  gap: 0.45rem;
+  align-items: center;
+  gap: 0.5rem;
   text-decoration: none;
   flex: none;
 }
+.brand__mark { display: block; flex: none; }
 .brand__word {
   font-family: var(--display);
-  font-weight: 700;
-  font-size: 1.3125rem;
-  letter-spacing: -0.03em;
+  font-size: 1.25rem;
+  letter-spacing: -0.022em;
+  line-height: 1;
 }
-.brand__dot {
-  width: 0.5rem; height: 0.5rem;
-  background: var(--accent);
-  border-radius: 2px;
-  transform: translateY(-1px);
-}
+.brand__a { font-weight: 600; color: var(--ink); }
+.brand__b { font-weight: 400; color: var(--ink-2); }
 .searchbar { flex: 1 1 auto; position: relative; min-width: 0; }
 .searchbar input { padding-left: 2.1rem; background: var(--surface); }
 .searchbar::before {

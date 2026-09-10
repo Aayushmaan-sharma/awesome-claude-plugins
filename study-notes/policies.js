@@ -1,4 +1,4 @@
-/* Notecase — policy pages.
+/* MFL Centre — policy pages.
  *
  * These are working drafts written against what this code actually does:
  * no server, no cookies, no trackers, nothing leaves the browser. The
@@ -130,7 +130,7 @@ const POLICIES = {
       {
         h: "What is kept in your browser",
         body: [
-          "Under the key notecase.v1 in local storage, this site keeps your cart, your orders, any listings you published and any reviews you left. It stays on your device until you clear it, is never sent anywhere, and is not readable by us.",
+          "Under the key mflcentre.v1 in local storage, this site keeps your cart, your orders, any listings you published and any reviews you left. It stays on your device until you clear it, is never sent anywhere, and is not readable by us.",
           "The cookies page lists it in full, and the clear-data button there removes it.",
         ],
       },
@@ -218,7 +218,7 @@ const POLICIES = {
       {
         h: "What it does store",
         body: [
-          "One local storage entry, notecase.v1, holding:",
+          "One local storage entry, mflcentre.v1, holding:",
           {
             list: [
               "Your cart — so it survives a reload.",

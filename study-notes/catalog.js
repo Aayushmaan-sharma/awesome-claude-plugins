@@ -1,4 +1,4 @@
-/* Notecase — sample catalogue.
+/* MFL Centre — sample catalogue.
  *
  * This is example inventory so the storefront opens in a working state.
  * Replace SAMPLE_NOTES with your own listings (or load them from your

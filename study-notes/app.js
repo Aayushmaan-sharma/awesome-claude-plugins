@@ -1,4 +1,4 @@
-/* Notecase — a storefront for buying and selling study notes.
+/* MFL Centre — a storefront for buying and selling study notes.
  *
  * No build step, no framework, no dependencies, and no network requests:
  * the fonts are served from this directory and there is no analytics,
@@ -38,7 +38,7 @@
   };
 
   const CONFIG = {
-    shopName: "Notecase",
+    shopName: "MFL Centre",
     locale: "en-GB",
     currency: "GBP",
     platformFeePct: 15,
@@ -46,7 +46,7 @@
     promos: { FRESHERS10: { pct: 10, label: "Freshers' week, 10% off" } },
   };
 
-  const STORE_KEY = "notecase.v1";
+  const STORE_KEY = "mflcentre.v1";
 
   /* ---------------------------------------------------------------- utils */
 
@@ -275,9 +275,9 @@
       <a class="skiplink" href="#view">Skip to main content</a>
       <header class="topbar">
         <div class="shell topbar__inner">
-          <a class="brand" href="#/" data-nav>
-            <span class="brand__dot" aria-hidden="true"></span>
-            <span class="brand__word">${esc(CONFIG.shopName)}</span>
+          <a class="brand" href="#/" data-nav aria-label="${esc(CONFIG.shopName)} — home">
+            ${logoMarkup()}
+            <span class="brand__word"><span class="brand__a">mfl</span><span class="brand__b">centre</span></span>
           </a>
           <div class="searchbar">
             <label class="sr-only" for="q">Search notes</label>
@@ -309,6 +309,18 @@
       else renderView();
     });
   }
+
+  /* The mark: a white sheet of notes with an acute accent over it — the page
+   * because that is what the site sells and what it is made of, the accent
+   * because a diacritic is what says modern languages. Four flat shapes, so
+   * the silhouette still reads at 16px. Colours come from the palette. */
+  const logoMarkup = () => `
+    <svg class="brand__mark" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
+      <path d="M15.9 0.6 H18.9 L14.5 4.2 H12.1 Z" fill="var(--accent)"></path>
+      <rect x="4.8" y="4.8" width="14.4" height="17.6" rx="2" fill="var(--ink)"></rect>
+      <rect x="7.4" y="10" width="9.2" height="2" rx="1" fill="var(--paper)"></rect>
+      <rect x="7.4" y="14.8" width="6" height="2" rx="1" fill="var(--paper)"></rect>
+    </svg>`;
 
   /* Sticky offsets follow the real height of the bar, which changes when the
    * nav wraps on a narrow screen. */

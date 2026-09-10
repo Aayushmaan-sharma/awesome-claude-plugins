@@ -1,4 +1,4 @@
-# Notecase — a storefront for selling study notes
+# MFL Centre — a storefront for selling study notes
 
 A self-contained shop for lecture notes, essay banks, case grids and flashcard
 decks. No build step, no framework, no dependencies, and no network requests:
@@ -41,7 +41,7 @@ node build-artifact.mjs          # -> dist/artifact.html (single file, fonts inl
   and a payout breakdown net of the platform fee.
 - **Sales** — copies sold and earnings per listing.
 
-State lives in `localStorage` under `notecase.v1` and never leaves the device.
+State lives in `localStorage` under `mflcentre.v1` and never leaves the device.
 
 ## Before you go live
 
