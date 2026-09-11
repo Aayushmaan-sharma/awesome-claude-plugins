@@ -1,4 +1,4 @@
-/* MFL Centre — policy pages.
+/* MFL Centre policy pages.
  *
  * These are working drafts written against what this code actually does:
  * no server, no cookies, no trackers, nothing leaves the browser. The
@@ -40,7 +40,7 @@ const POLICIES = {
             list: [
               "You may download, read, print and annotate the file for your own study.",
               "You may not resell it, share it, upload it to a file-sharing or note-sharing site, or pass it to anyone else.",
-              "The licence lasts as long as we operate the site. It is not a transfer of copyright — the seller keeps that.",
+              "The licence lasts as long as we operate the site. It is not a transfer of copyright. The seller keeps that.",
             ],
           },
           "Delivery is immediate: the download unlocks as soon as the order is confirmed. Because of that you are asked to consent to immediate delivery at checkout, which affects your cancellation rights. The refund policy explains exactly how.",
@@ -80,7 +80,7 @@ const POLICIES = {
       {
         h: "If something is wrong with a pack",
         body: [
-          "Digital content sold to consumers has to be as described, fit for purpose and of satisfactory quality — that is the Consumer Rights Act 2015, and nothing here reduces it. If a pack is not what the listing said it was, tell us and read the refund policy.",
+          "Digital content sold to consumers has to be as described, fit for purpose and of satisfactory quality. That is the Consumer Rights Act 2015, and nothing here reduces it. If a pack is not what the listing said it was, tell us and read the refund policy.",
         ],
       },
       {
@@ -104,12 +104,12 @@ const POLICIES = {
   privacy: {
     nav: "Privacy",
     title: "Privacy policy",
-    lede: "What this site does with information about you — which, as it currently stands, is very little.",
+    lede: "What this site does with information about you, which as it currently stands is very little.",
     blocks: [
       {
         h: "Read this first",
         body: [
-          "This build has no server. Everything you type stays in your own browser, and the page makes no network requests to anyone — the fonts are served from this site, and there are no analytics, advertising or embedded third-party components.",
+          "This build has no server. Everything you type stays in your own browser, and the page makes no network requests to anyone. The fonts are served from this site, and there are no analytics, advertising or embedded third-party components.",
           "When you connect a payment provider and a backend, that stops being true, and this page has to be rewritten to describe what actually happens. Treat it as a starting draft, not a finished policy.",
         ],
       },
@@ -124,7 +124,7 @@ const POLICIES = {
         body: [
           "At checkout: your email address. It is used to send the download and the receipt, and nothing else. We do not ask for your address, your course or your institution, because we do not need them to give you a file.",
           "If you open a seller account: your email address, and the name your sign-in provider gives us if you use one. Sellers need an account because we have to know who to pay. Buying needs no account.",
-          "We never ask for a password on this site. Sign-in is a one-time link sent to your email, or a provider you already trust — so there is no password here to leak.",
+          "We never ask for a password on this site. Sign-in is a one-time link sent to your email, or a provider you already trust, so there is no password here to leak.",
           "If you list notes: the listing content you write. That is published, so treat it as public.",
           "If you review a pack you bought: your rating and review text, published against the listing.",
         ],
@@ -139,7 +139,7 @@ const POLICIES = {
       {
         h: "Why we are allowed to hold it",
         body: [
-          "Your email is processed to perform the contract you entered into when you bought a pack. Published listings and reviews are processed on the same basis for sellers, and on legitimate interests — running a marketplace people can trust — for their display.",
+          "Your email is processed to perform the contract you entered into when you bought a pack. Published listings and reviews are processed on the same basis for sellers, and on legitimate interests (running a marketplace people can trust) for their display.",
         ],
       },
       {
@@ -151,7 +151,7 @@ const POLICIES = {
       {
         h: "Who else sees it",
         body: [
-          "Once a payment provider is connected, it will see what it needs to take the payment, and it will be named here. If you sign in with Google, Google will know you signed in here — the same as anywhere else you use it. Nobody else. We do not sell data and we do not share it for advertising.",
+          "Once a payment provider is connected, it will see what it needs to take the payment, and it will be named here. If you sign in with Google, Google will know you signed in here, the same as anywhere else you use it. Nobody else. We do not sell data and we do not share it for advertising.",
         ],
       },
       {
@@ -174,7 +174,7 @@ const POLICIES = {
         body: [
           "For digital content bought online you normally have 14 days to cancel under the Consumer Contracts (Information, Cancellation and Additional Charges) Regulations 2013.",
           "That right ends once the download starts, but only if you agreed to it starting immediately and acknowledged that you were giving up the right. That is exactly what the checkbox at checkout does, and it is why the checkbox is not ticked for you.",
-          "If you would rather keep the 14 days, do not tick it — but then we cannot release the file until the 14 days are up, so in practice a purchase here means waiving it.",
+          "If you would rather keep the 14 days, do not tick it. We then cannot release the file until the 14 days are up, so in practice a purchase here means waiving it.",
         ],
       },
       {
@@ -183,7 +183,7 @@ const POLICIES = {
           "Waiving the cancellation right does not touch your rights under the Consumer Rights Act 2015. We refund in full if:",
           {
             list: [
-              "The pack is not what the listing described — wrong module, wrong level, far fewer pages, missing what the contents list promised.",
+              "The pack is not what the listing described: wrong module, wrong level, far fewer pages, or missing what the contents list promised.",
               "The file is corrupt, unreadable, or will not download.",
               "You were charged twice, or charged for something you did not buy.",
             ],
@@ -194,7 +194,7 @@ const POLICIES = {
       {
         h: "When we will not refund",
         body: [
-          "We will not refund because you changed your mind after downloading, because the notes did not raise your grade, or because you bought the wrong pack and downloaded it anyway. Check the contents list and the preview before you buy — that is what they are for.",
+          "We will not refund because you changed your mind after downloading, because the notes did not raise your grade, or because you bought the wrong pack and downloaded it anyway. Check the contents list and the preview before you buy. That is what they are for.",
         ],
       },
       {
@@ -223,10 +223,10 @@ const POLICIES = {
           "One local storage entry, mflcentre.v1, holding:",
           {
             list: [
-              "Your cart — so it survives a reload.",
-              "Your orders — so your library keeps working and you can download again.",
-              "Listings you published — so they are still there when you come back.",
-              "Reviews you left — so the site knows you already reviewed a pack.",
+              "Your cart, so it survives a reload.",
+              "Your orders, so your library keeps working and you can download again.",
+              "Listings you published, so they are still there when you come back.",
+              "Reviews you left, so the site knows you already reviewed a pack.",
               "Your signed-in account, so you stay signed in between visits.",
             ],
           },
@@ -237,7 +237,7 @@ const POLICIES = {
         h: "Why there is no consent banner",
         body: [
           "Under the Privacy and Electronic Communications Regulations, storage that is strictly necessary to provide the service the user asked for does not need consent. A shopping cart is the textbook example. Everything above is in that category, so a banner would be theatre.",
-          "This changes the moment you add analytics, an advertising pixel, an embedded player or a chat widget. Any of those needs a real consent mechanism, with rejection as easy as acceptance, before the tag loads — not a banner that sets the cookie anyway.",
+          "This changes the moment you add analytics, an advertising pixel, an embedded player or a chat widget. Any of those needs a real consent mechanism, with rejection as easy as acceptance, before the tag loads, not a banner that sets the cookie anyway.",
         ],
       },
       {
@@ -258,7 +258,7 @@ const POLICIES = {
       {
         h: "What we aim for",
         body: [
-          "WCAG 2.2 level AA. We are not there by proof — no formal audit has been carried out — but the site is built to it and the parts that can be measured are measured.",
+          "WCAG 2.2 level AA. We are not there by proof, because no formal audit has been carried out, but the site is built to it and the parts that can be measured are measured.",
         ],
       },
       {
@@ -266,7 +266,7 @@ const POLICIES = {
         body: [
           {
             list: [
-              "The site has a light theme and a dark one, and a control in the header to pick either or to follow your system. Every text and border colour pair in both themes — on the interface and on the white paper — is checked against the WCAG contrast formula by a script in the repository. The build fails if a pair drops below its threshold.",
+              "The site has a light theme and a dark one, and a control in the header to pick either or to follow your system. Every text and border colour pair in both themes, on the interface and on the white paper, is checked against the WCAG contrast formula by a script in the repository. The build fails if a pair drops below its threshold.",
               "Everything works from the keyboard: the shop, the filters, the cart, checkout, the listing form. Focus is always visible.",
               "The cart and checkout dialogs trap focus while open, close on Escape, and return focus to the control that opened them.",
               "Form fields have real labels, errors are announced and tied to the field they belong to, and no error is signalled by colour alone.",
@@ -304,7 +304,7 @@ const POLICIES = {
           "Sellers may list only notes they wrote themselves. Not allowed, in any form:",
           {
             list: [
-              "Lecture slides, handouts or recordings — those belong to the lecturer or the institution.",
+              "Lecture slides, handouts or recordings. Those belong to the lecturer or the institution.",
               "Scanned or retyped textbook pages, problem sets or solution manuals.",
               "Past papers, mark schemes or question banks still in copyright.",
               "Another student's notes, with or without their say-so.",
@@ -332,7 +332,7 @@ const POLICIES = {
       {
         h: "Reviews",
         body: [
-          "Only people who bought a pack through this site can review it, and every review shown says so. We do not write reviews, we do not pay for them, and we do not delete a review for being negative — only for abuse, personal data or spam.",
+          "Only people who bought a pack through this site can review it, and every review shown says so. We do not write reviews, we do not pay for them, and we do not delete a review for being negative, only for abuse, personal data or spam.",
           "Incentivised and fabricated reviews are banned outright by the Digital Markets, Competition and Consumers Act 2024. Nobody selling here gets to post one.",
         ],
       },

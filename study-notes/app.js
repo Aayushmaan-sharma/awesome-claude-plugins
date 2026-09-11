@@ -1,4 +1,4 @@
-/* MFL Centre — a storefront for buying and selling study notes.
+/* MFL Centre, a storefront for buying and selling study notes.
  *
  * No build step, no framework, no dependencies, and no network requests:
  * the fonts are served from this directory and there is no analytics,
@@ -14,10 +14,10 @@
   "use strict";
 
   /* Fill these in before you trade. Anything left blank shows up as a
-   * visible gap on the policy pages instead of an invented detail — a
-   * trader has to identify itself under the Companies Act and the
-   * E-Commerce Regulations, and a plausible-looking placeholder is worse
-   * than an obvious one. */
+   * visible gap on the policy pages instead of an invented detail. A trader
+   * has to identify itself under the Companies Act and the E-Commerce
+   * Regulations, and a plausible-looking placeholder is worse than an
+   * obvious one. */
   const SITE = {
     legalName: "",
     companyNumber: "",
@@ -105,7 +105,7 @@
         }),
       );
     } catch {
-      /* private browsing or storage disabled — the session still works */
+      /* private browsing or storage disabled; the session still works */
     }
   }
 
@@ -125,7 +125,7 @@
   /* Three states, the way a theme control should have them: an explicit light
    * or dark, or "match system". Dark is the default, because that is what this
    * shop looks like. The choice is written to data-appearance rather than to
-   * data-theme, which the artifact viewer owns — writing there would mean
+   * data-theme, which the artifact viewer owns. Writing there would mean
    * fighting the host over the same attribute. */
   const THEMES = ["system", "light", "dark"];
 
@@ -287,7 +287,7 @@
   function siteValue(key) {
     const value = String(SITE[key] || "").trim();
     if (value) return esc(value);
-    return `<span class="todo"><span class="sr-only">Placeholder — the site owner still has to add </span>${esc(SITE_FIELDS[key] || key)}</span>`;
+    return `<span class="todo"><span class="sr-only">Placeholder. The site owner still has to add </span>${esc(SITE_FIELDS[key] || key)}</span>`;
   }
 
   function fillTokens(text) {
@@ -336,7 +336,7 @@
       "",
       "---",
       `Downloaded from the ${CONFIG.shopName} demo storefront. This file is the listing's`,
-      "contents sheet, not the notes themselves — connect your own file storage to",
+      "contents sheet, not the notes themselves. Connect your own file storage to",
       "deliver the real PDF or deck to buyers.",
     ];
     return lines.join("\n");
@@ -380,7 +380,7 @@
       <a class="skiplink" href="#view">Skip to main content</a>
       <header class="topbar">
         <div class="shell topbar__inner">
-          <a class="brand" href="#/" data-nav aria-label="${esc(CONFIG.shopName)} — home">
+          <a class="brand" href="#/" data-nav aria-label="${esc(CONFIG.shopName)} home">
             ${logoMarkup()}
             <span class="brand__word"><span class="brand__a">mfl</span><span class="brand__b">centre</span></span>
           </a>
@@ -417,8 +417,8 @@
     });
   }
 
-  /* The mark: a white sheet of notes with an acute accent over it — the page
-   * because that is what the site sells and what it is made of, the accent
+  /* The mark: a white sheet of notes with an acute accent over it. The page,
+   * because that is what the site sells and what it is made of; the accent,
    * because a diacritic is what says modern languages. Four flat shapes, so
    * the silhouette still reads at 16px. Colours come from the palette. */
   const logoMarkup = () => `
@@ -497,6 +497,23 @@
     });
   }
 
+  /* Drawn icons rather than tick, cross and star characters. A glyph borrowed
+   * from the text font renders at whatever weight and baseline that font
+   * happens to give it, and a screen reader may read it out. These scale with
+   * the text, take currentColor, and are hidden from assistive technology
+   * because the words beside them already say it. */
+  const ICON_PATHS = {
+    check: '<path d="M3.3 8.5 6.6 11.8 12.7 4.7"></path>',
+    close: '<path d="M4.2 4.2 11.8 11.8M11.8 4.2 4.2 11.8"></path>',
+    back: '<path d="M9.8 3.6 5.4 8l4.4 4.4M5.6 8h6.8"></path>',
+    star: '<path d="M8 2.1 9.75 5.8l4.05.56-2.93 2.82.7 4.02L8 11.3 4.43 13.2l.7-4.02L2.2 6.36l4.05-.56z" fill="currentColor" stroke="none"></path>',
+    info: '<circle cx="8" cy="8" r="6"></circle><path d="M8 7.3v3.9"></path><path d="M8 4.9h.01"></path>',
+    alert: '<path d="M8 2.8 14.3 13.3H1.7z"></path><path d="M8 6.6v3"></path><path d="M8 11.5h.01"></path>',
+  };
+
+  const icon = (name, cls = "") =>
+    `<svg class="icon${cls ? ` ${cls}` : ""}" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${ICON_PATHS[name]}</svg>`;
+
   /* ------------------------------------------------------------------ pieces */
 
   /* A few ruled lines of "writing" so a cover reads as a used page rather
@@ -522,7 +539,7 @@
   function ratingMarkup(note) {
     const { avg, count } = ratingFor(note.id);
     if (!count) return `<span class="rating rating--none">No reviews yet</span>`;
-    return `<span class="rating"><span class="rating__star" aria-hidden="true">★</span>${avg.toFixed(1)}<span class="rating__count">from ${count} ${count === 1 ? "review" : "reviews"}</span></span>`;
+    return `<span class="rating">${icon("star", "rating__star")}${avg.toFixed(1)}<span class="rating__count">from ${count} ${count === 1 ? "review" : "reviews"}</span></span>`;
   }
 
   function cardMarkup(note) {
@@ -551,9 +568,9 @@
   }
 
   function cartButton(note, extra = "") {
-    if (owns(note.id)) return `<span class="owned"><span aria-hidden="true">✓</span> In library</span>`;
+    if (owns(note.id)) return `<span class="owned">${icon("check")} In library</span>`;
     if (inCart(note.id))
-      return `<button class="btn ${extra} btn--ghost" type="button" data-action="open-cart">In cart — view</button>`;
+      return `<button class="btn ${extra} btn--ghost" type="button" data-action="open-cart">View in cart</button>`;
     return `<button class="btn ${extra} btn--primary" type="button" data-action="add" data-id="${esc(note.id)}" aria-label="Add ${esc(note.title)} to cart">Add to cart</button>`;
   }
 
@@ -576,9 +593,9 @@
       <section class="band">
         <div class="shell band__inner">
           <div>
-            <p class="eyebrow">Modern foreign languages</p>
-            <h1>Study notes for modern languages.</h1>
-            <p class="band__lede">Vocabulary decks, grammar tables, speaking answers, and notes on the set films and texts — written by students who took the course. Sellers keep ${100 - CONFIG.platformFeePct}% of every sale; buyers get the file the moment they check out.</p>
+            <p class="eyebrow">GCSE · A-Level · IB · Degree</p>
+            <h1>Buy and sell modern-languages study notes.</h1>
+            <p class="band__lede">Vocabulary decks, grammar tables, speaking answers, and notes on the set films and texts, written by students who took the course. Sellers keep ${100 - CONFIG.platformFeePct}% of what a buyer pays. Buyers download the file at checkout.</p>
             <div class="band__actions">
               <a class="btn btn--primary" href="#/sell" data-nav>List your notes</a>
               <a class="btn btn--ghost" href="#/library" data-nav>Go to your library</a>
@@ -591,8 +608,8 @@
               <div class="stat"><p class="stat__num">${levelsUsed}</p><p class="stat__label">Levels covered</p></div>
             </div>
             <div class="notice">
-              <span aria-hidden="true" class="mono">i</span>
-              <p><b>Sample catalogue.</b> These listings are examples so the shop opens in a working state. Payments aren't connected — checkout records the order and unlocks the download.</p>
+              ${icon("info")}
+              <p><b>Sample catalogue.</b> These listings are examples so the shop opens in a working state. Payments aren't connected, so checkout records the order and unlocks the download.</p>
             </div>
           </div>
         </div>
@@ -703,8 +720,8 @@
                      <div>
                        <div class="review__head">
                          <span class="review__name">${esc(r.by)}</span>
-                         <span class="rating"><span class="rating__star" aria-hidden="true">★</span>${r.rating}<span class="sr-only"> out of 5</span></span>
-                         <span class="verified"><span aria-hidden="true">✓</span> Verified purchase</span>
+                         <span class="rating">${icon("star", "rating__star")}${r.rating}<span class="sr-only"> out of 5</span></span>
+                         <span class="verified">${icon("check")} Verified purchase</span>
                          <span class="review__when">${new Date(r.at).toLocaleDateString(CONFIG.locale)}</span>
                        </div>
                        <p>${esc(r.text)}</p>
@@ -713,7 +730,7 @@
                    )
                    .join("")}
                </div>`
-            : `<p class="reviews__empty">No reviews yet. Reviews here are only ever written by people who bought the pack through this site — none are seeded, bought or written by us.</p>`
+            : `<p class="reviews__empty">No reviews yet. Reviews here are only ever written by people who bought the pack through this site. None are seeded, bought or written by us.</p>`
         }
         ${form}
       </section>`;
@@ -722,7 +739,7 @@
   function detailView(note) {
     return `
       <div class="shell detail">
-        <button class="backlink" type="button" data-action="back"><span aria-hidden="true">←</span> Back to all notes</button>
+        <button class="backlink" type="button" data-action="back">${icon("back")} Back to all notes</button>
         <div class="detail__grid">
           <div>
             <div class="card__tags detail__tags">
@@ -770,12 +787,12 @@
               ${
                 owns(note.id)
                   ? `<button class="btn btn--primary btn--wide" type="button" data-action="download" data-id="${esc(note.id)}" aria-label="Download ${esc(note.title)} again">Download again</button>
-                     <p class="buypanel__owned"><span aria-hidden="true">✓</span> Already in your library</p>`
+                     <p class="buypanel__owned">${icon("check")} Already in your library</p>`
                   : inCart(note.id)
                     ? `<button class="btn btn--wide" type="button" data-action="open-cart">Go to cart</button>
                        <button class="btn btn--ghost btn--wide" type="button" data-action="remove" data-id="${esc(note.id)}" aria-label="Remove ${esc(note.title)} from cart">Remove from cart</button>`
                     : `<button class="btn btn--primary btn--wide" type="button" data-action="add" data-id="${esc(note.id)}" aria-label="Add ${esc(note.title)} to cart">Add to cart</button>
-                       <button class="btn btn--ghost btn--wide" type="button" data-action="buy-now" data-id="${esc(note.id)}">Buy now — go straight to checkout</button>`
+                       <button class="btn btn--ghost btn--wide" type="button" data-action="buy-now" data-id="${esc(note.id)}">Buy now</button>`
               }
             </div>
             <dl class="buypanel__rows">
@@ -793,8 +810,8 @@
             <div class="seller">
               <div class="avatar" aria-hidden="true">${esc(initials(note.seller.name))}</div>
               <div>
+                <p class="seller__label">Written by</p>
                 <p class="seller__name">${esc(note.seller.name)}</p>
-                <p class="seller__meta">Selling here since ${esc(note.seller.since || new Date().getFullYear())}</p>
               </div>
             </div>
           </aside>
@@ -982,8 +999,8 @@
               <p class="panel__foot">${esc(CONFIG.vatNote)} You are responsible for tax on what you earn.</p>
             </div>
             <div class="notice notice--flush">
-              <span aria-hidden="true" class="mono">i</span>
-              <p>Only list work you wrote yourself. Uploading a lecturer's slides or a textbook chapter is copyright infringement — see the <a href="#/policy/integrity" data-nav>copyright policy</a>.</p>
+              ${icon("info")}
+              <p>Only list work you wrote yourself. Uploading a lecturer's slides or a textbook chapter is copyright infringement. See the <a href="#/policy/integrity" data-nav>copyright policy</a>.</p>
             </div>
           </div>
         </form>
@@ -1026,7 +1043,7 @@
           </div>
           <div class="stack">
             <div class="panel authcard">
-              <p class="authnote">Signing out leaves everything on this device — your library, your listings and your earnings stay put.</p>
+              <p class="authnote">Signing out leaves everything on this device. Your library, your listings and your earnings stay put.</p>
               <div class="authactions">
                 <a class="btn btn--primary" href="#/earnings" data-nav>Go to earnings</a>
                 <button class="btn btn--ghost" type="button" data-action="sign-out">Sign out</button>
@@ -1046,8 +1063,8 @@
           </div>
           <div class="panel authcard">
             <div class="demoflag">
-              <span class="demoflag__mark" aria-hidden="true">!</span>
-              <p><b>Demo sign-in — nothing is connected.</b> No password is asked for here, and none should be: a build with no backend has nowhere safe to keep one. Both options below create a local session on this device only.</p>
+              ${icon("alert", "demoflag__mark")}
+              <p><b>Demo sign-in. Nothing is connected.</b> No password is asked for here, and none should be: a build with no backend has nowhere safe to keep one. Both options below create a local session on this device only.</p>
             </div>
 
             <button class="btn btn--wide provider" type="button" data-action="signin-google">
@@ -1123,7 +1140,7 @@
     return `M${x} ${top + h} V${top + rr} Q${x} ${top} ${x + rr} ${top} H${x + w - rr} Q${x + w} ${top} ${x + w} ${top + rr} V${top + h} Z`;
   };
 
-  /* Net earnings by month — one series, so one hue and no legend; the title
+  /* Net earnings by month. One series, so one hue and no legend; the title
    * says what is plotted and the table below carries every value. */
   function earningsChart(months) {
     const W = 560;
@@ -1200,7 +1217,7 @@
           <div>
             <p class="hero__label" id="balance-head">Earned after fees</p>
             <p class="hero__value">${money(net)}</p>
-            <p class="hero__sub">Available to pay out. Nothing has been paid out yet — payouts start once a payment provider is connected.</p>
+            <p class="hero__sub">Available to pay out. Nothing has been paid out yet. Payouts start once a payment provider is connected.</p>
           </div>
           <dl class="kpis">
             <div class="kpi"><dt>Gross sales</dt><dd>${money(gross)}</dd></div>
@@ -1330,7 +1347,7 @@
                 ? `<div class="setup" role="note">
                      <p class="setup__head">Before this page is publishable</p>
                      <p>${missing.length} required business ${missing.length === 1 ? "detail is" : "details are"} still blank. Fill in <code>SITE</code> at the top of <code>app.js</code>:</p>
-                     <ul>${missing.map((k) => `<li><code>${esc(k)}</code> — ${esc(SITE_FIELDS[k])}</li>`).join("")}</ul>
+                     <ul>${missing.map((k) => `<li><code>${esc(k)}</code>: ${esc(SITE_FIELDS[k])}</li>`).join("")}</ul>
                      <p>Nothing here is legal advice. Have a solicitor read these pages before you trade.</p>
                    </div>`
                 : ""
@@ -1359,7 +1376,7 @@
       <aside class="drawer" role="dialog" aria-modal="true" aria-labelledby="cart-title">
         <header class="drawer__head">
           <h2 id="cart-title">Cart <span class="drawer__count">${items.length} ${items.length === 1 ? "pack" : "packs"}</span></h2>
-          <button class="iconbtn" type="button" data-action="close-overlay" aria-label="Close cart">✕</button>
+          <button class="iconbtn" type="button" data-action="close-overlay" aria-label="Close cart">${icon("close")}</button>
         </header>
         <div class="drawer__body">
           ${
@@ -1423,12 +1440,12 @@
               <p class="eyebrow">Step 2 of 2</p>
               <h2 id="checkout-title">Checkout</h2>
             </div>
-            <button class="iconbtn" type="button" data-action="close-overlay" aria-label="Close checkout">✕</button>
+            <button class="iconbtn" type="button" data-action="close-overlay" aria-label="Close checkout">${icon("close")}</button>
           </header>
           <form class="modal__body" id="checkout-form" novalidate>
             <div class="demoflag">
-              <span class="demoflag__mark" aria-hidden="true">!</span>
-              <p><b>Demo checkout — no money moves.</b> There are no card fields here on purpose. Connect Stripe, Paddle or Lemon Squeezy before selling to real buyers; the README shows where the hook goes.</p>
+              ${icon("alert", "demoflag__mark")}
+              <p><b>Demo checkout. No money moves.</b> There are no card fields here on purpose. Connect Stripe, Paddle or Lemon Squeezy before selling to real buyers; the README shows where the hook goes.</p>
             </div>
             <div class="field">
               <label for="c-email">Email for the download</label>
@@ -1598,7 +1615,7 @@
     state.overlay = null;
     writeStore();
     location.hash = "#/library";
-    toast(`Order ${order.ref} placed — ${order.items.length} pack${order.items.length === 1 ? "" : "s"} in your library`);
+    toast(`Order ${order.ref} placed. ${order.items.length} pack${order.items.length === 1 ? "" : "s"} added to your library.`);
   }
 
   function publishListing(form) {
@@ -1638,15 +1655,15 @@
       updated: new Date().toLocaleDateString(CONFIG.locale, { month: "short", year: "numeric" }),
       createdAt: Date.now(),
       mine: true,
-      seller: { name: displayName(), grade: (draft.grade || "").trim(), since: String(new Date().getFullYear()) },
-      summary: (draft.summary || "").trim() || "No summary yet — add one to help buyers decide.",
+      seller: { name: displayName(), grade: (draft.grade || "").trim() },
+      summary: (draft.summary || "").trim() || "No summary yet. Add one to help buyers decide.",
       contents: contents.length ? contents : [["Contents to be added", 0]],
       includes: [`${Number(draft.pages) || "?"} ${draft.format.includes("Anki") ? "cards" : "pages"}, ${draft.format}`, "Instant download after purchase"],
     });
     Object.assign(draft, { title: "", course: "", institution: "", pages: "", grade: "", summary: "", contents: "" });
     writeStore();
     location.hash = `#/note/${id}`;
-    toast("Listing published — it's live in the shop");
+    toast("Listing published. It's live in the shop.");
   }
 
   function publishReview(form, noteId) {
@@ -1660,7 +1677,7 @@
       return;
     }
     if (text.length < 10) {
-      showError(error, "Write at least a sentence — it's what the next buyer reads.");
+      showError(error, "Write at least a sentence. It's what the next buyer reads.");
       $("#review-text").focus();
       return;
     }
@@ -1691,12 +1708,12 @@
   }
 
   /* Deliberately does not open anything that looks like a Google password
-   * screen — this build cannot talk to Google, and a page that pretended to
+   * screen. This build cannot talk to Google, and a page that pretended to
    * would be a phishing lesson, not a demo. */
   function signinWithGoogle() {
     signIn({ provider: "google", email: "demo.seller@example.com", name: "Demo Seller" });
     location.hash = "#/earnings";
-    toast("Signed in with a demo account — Google isn't connected in this build.");
+    toast("Signed in with a demo account. Google isn't connected in this build.");
   }
 
   function bindChartTooltip() {

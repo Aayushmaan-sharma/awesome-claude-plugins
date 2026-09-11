@@ -70,6 +70,19 @@ actually does. They are not legal advice — have a solicitor read them, and
 rewrite them the moment you add a backend, because most of what privacy and
 cookies say stops being true then.
 
+## Deploying it, and the domain
+
+The build is a folder of static files, so any static host will serve it:
+Cloudflare Pages, Netlify, GitHub Pages, S3 behind CloudFront, or a plain
+nginx root. There is nothing to run server-side until you connect payments.
+
+Put it on your own domain rather than a host's subdomain. A shop on
+`something.pages.dev` reads as a side project, and you cannot move providers
+later without breaking every link anyone saved. Buy the name, point an `A` or
+`CNAME` record at your host, and turn on the automatic certificate every one of
+those providers offers. Then set the canonical URL in `index.html` and use the
+same domain for the sender address on receipts, so the email and the site agree.
+
 ## Sign-in is not connected either
 
 `#/signin` offers the two options a notes marketplace normally offers — a one-time

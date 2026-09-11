@@ -1,4 +1,4 @@
-/* MFL Centre — sample catalogue.
+/* MFL Centre sample catalogue.
  *
  * Example inventory so the storefront opens in a working state. Replace
  * SAMPLE_NOTES with your own listings, or load them from your backend in
@@ -38,7 +38,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 950,
     updated: "Sep 2026",
-    seller: { name: "Amélie Fontaine", grade: "A* · 94%", since: "2024" },
+    seller: { name: "Amélie Fontaine", grade: "A* · 94%" },
     summary:
       "The stimulus card and the individual research project, both taken apart. Every sub-theme gets a worked answer, the follow-up questions examiners actually ask, and the phrases that buy you three seconds of thinking time without sounding rehearsed.",
     contents: [
@@ -68,7 +68,7 @@ const SAMPLE_NOTES = [
     format: "Anki deck",
     price: 650,
     updated: "Aug 2026",
-    seller: { name: "Joseph Adeyemi", grade: "Grade 9", since: "2025" },
+    seller: { name: "Joseph Adeyemi", grade: "Grade 9" },
     summary:
       "Every word on the foundation and higher lists, split by theme and tagged by tier, with gender baked into the card so you never learn a noun without its article.",
     contents: [
@@ -95,7 +95,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 850,
     updated: "Jul 2026",
-    seller: { name: "Amélie Fontaine", grade: "A* · 94%", since: "2024" },
+    seller: { name: "Amélie Fontaine", grade: "A* · 94%" },
     summary:
       "Malle's film read scene by scene with timecodes, so a quotation can be found in the ten seconds you have while planning. Eight model essays in French, each answering a real past question.",
     contents: [
@@ -123,7 +123,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 900,
     updated: "Sep 2026",
-    seller: { name: "Noor Haddad", grade: "7/7 HL", since: "2024" },
+    seller: { name: "Noor Haddad", grade: "7/7 HL" },
     summary:
       "Paper 1 is a register test wearing a writing task. Every text type the syllabus can set, with its conventions, its opening and closing formulas, and a model answer at level 7.",
     contents: [
@@ -151,7 +151,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 700,
     updated: "Sep 2026",
-    seller: { name: "Katrin Weiss", grade: "A* · 91%", since: "2023" },
+    seller: { name: "Katrin Weiss", grade: "A* · 91%" },
     summary:
       "Adjective endings stop being guesswork once the weak, mixed and strong tables sit on one page in the order you actually need them. Built from the mistakes in two years of my own marked work.",
     contents: [
@@ -180,7 +180,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 800,
     updated: "Jun 2026",
-    seller: { name: "Katrin Weiss", grade: "A* · 91%", since: "2023" },
+    seller: { name: "Katrin Weiss", grade: "A* · 91%" },
     summary:
       "Schlink's novel arranged for the exam rather than for reading: chapter summaries, the motifs examiners return to, and 60 quotations grouped by the argument they support.",
     contents: [
@@ -208,7 +208,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 800,
     updated: "Sep 2026",
-    seller: { name: "Diego Ramírez", grade: "A* · 96%", since: "2024" },
+    seller: { name: "Diego Ramírez", grade: "A* · 96%" },
     summary:
       "Not a list of triggers to memorise but the logic underneath them, so an unfamiliar sentence still comes out right. Every trigger is paired with the indicative version so the difference is visible.",
     contents: [
@@ -237,7 +237,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 800,
     updated: "May 2026",
-    seller: { name: "Diego Ramírez", grade: "A* · 96%", since: "2024" },
+    seller: { name: "Diego Ramírez", grade: "A* · 96%" },
     summary:
       "Lorca's play mapped act by act, with the colour and animal symbolism tracked across the whole text rather than listed once. Notes and essay plans written in Spanish.",
     contents: [
@@ -265,7 +265,7 @@ const SAMPLE_NOTES = [
     format: "PDF + dataset",
     price: 750,
     updated: "Aug 2026",
-    seller: { name: "Noor Haddad", grade: "A · 88%", since: "2024" },
+    seller: { name: "Noor Haddad", grade: "A · 88%" },
     summary:
       "Translation into Spanish is a narrow test wearing a wide coat: the same twenty structures come up every year. Each one gets the rule, the trap, and five sentences to drill it.",
     contents: [
@@ -293,7 +293,7 @@ const SAMPLE_NOTES = [
     format: "Handwritten scan",
     price: 850,
     updated: "Jun 2026",
-    seller: { name: "Sofia Marchetti", grade: "First · 78%", since: "2025" },
+    seller: { name: "Sofia Marchetti", grade: "First · 78%" },
     summary:
       "Handwritten across a first year of ab initio Italian and scanned at 600 dpi. The tenses are introduced in the order the course teaches them, with the exceptions written in the margin where I met them.",
     contents: [
@@ -321,7 +321,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 800,
     updated: "Apr 2026",
-    seller: { name: "Rita Carvalho", grade: "First · 80%", since: "2024" },
+    seller: { name: "Rita Carvalho", grade: "First · 80%" },
     summary:
       "One column each for the two standards, so you can learn either without accidentally mixing them. Covers the differences that change meaning, not just the ones that change accent.",
     contents: [
@@ -350,7 +350,7 @@ const SAMPLE_NOTES = [
     format: "PDF + Anki",
     price: 1100,
     updated: "Jul 2026",
-    seller: { name: "Li Wenjing", grade: "Distinction", since: "2023" },
+    seller: { name: "Li Wenjing", grade: "Distinction" },
     summary:
       "The 600 new characters grouped by radical rather than by textbook chapter, so the ones that look alike are learned apart. Sentence patterns come with the measure word already attached.",
     contents: [
@@ -377,7 +377,7 @@ const SAMPLE_NOTES = [
     format: "PDF + Anki",
     price: 1000,
     updated: "Aug 2026",
-    seller: { name: "Li Wenjing", grade: "Pass, N2", since: "2023" },
+    seller: { name: "Li Wenjing", grade: "Pass, N2" },
     summary:
       "Each pattern gets the structure it attaches to, the register it belongs in, and the N4 pattern people confuse it with. Written while sitting N3, then corrected after sitting N2.",
     contents: [
@@ -405,7 +405,7 @@ const SAMPLE_NOTES = [
     format: "Typed PDF",
     price: 900,
     updated: "Mar 2026",
-    seller: { name: "Sofia Marchetti", grade: "First · 76%", since: "2025" },
+    seller: { name: "Sofia Marchetti", grade: "First · 76%" },
     summary:
       "Unidirectional against multidirectional, then what each prefix does to both. The diagrams are the point: once you can see the motion, the pair you need stops being a coin toss.",
     contents: [

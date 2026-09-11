@@ -1,5 +1,5 @@
 /* Self-hosted so the page makes no third-party request. SIL Open Font
-   License 1.1 — see fonts/OFL.txt for the copyright holders. */
+   License 1.1. See fonts/OFL.txt for the copyright holders. */
 @font-face {
   font-family: "Source Serif 4";
   src: url("fonts/source-serif-4-latin.woff2") format("woff2");
@@ -22,15 +22,15 @@
   font-display: swap;
 }
 
-/* MFL Centre — study notes marketplace
+/* MFL Centre study notes marketplace
    A desk with white paper on it, and as little colour as the job needs. The
    one accent is a muted brass used at small sizes; marker yellow appears only
    on the paper, where a highlighter belongs.
 
    Dark is the base palette and the default: :root carries it complete, so a
    page that never runs JS still renders a whole theme. Light is a designed
-   alternate — its own steps against its own grounds, both checked by
-   check-a11y.mjs — applied by [data-appearance="light"], which app.js sets
+   alternate, with its own steps against its own grounds, both checked by
+   check-a11y.mjs. It is applied by [data-appearance="light"], which app.js sets
    from the reader's choice (or from the host and prefers-color-scheme when
    that choice is "match system"). The paper itself is white in both. */
 
@@ -85,7 +85,12 @@
   --gap: 1rem;
   --radius: 6px;
   --shell: 1220px;
+
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.3 8.5 6.6 11.8 12.7 4.7' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-alert: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 2.8 14.3 13.3H1.7z' fill='none' stroke='%23000' stroke-width='1.6' stroke-linejoin='round'/%3E%3Cpath d='M8 6.6v3' stroke='%23000' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.5' r='.85' fill='%23000'/%3E%3C/svg%3E");
 }
+
+.icon { display: inline-block; flex: none; vertical-align: -0.16em; }
 
 
 /* Light: paper on a pale desk. Actions invert to ink-on-bone, the brass steps
@@ -306,9 +311,9 @@ select {
 .cartbtn__count {
   font-family: var(--mono);
   font-size: 0.6875rem;
-  min-width: 1.15rem;
-  padding: 0 0.25rem;
-  border-radius: 999px;
+  min-width: 1.2rem;
+  padding: 0 0.28rem;
+  border-radius: 4px;
   background: var(--ink);
   color: var(--paper);
   text-align: center;
@@ -375,6 +380,7 @@ select {
   margin-top: 1.1rem;
 }
 .notice b { color: var(--ink-2); }
+.notice .icon { color: var(--ink-3); margin-top: 0.14em; }
 .notice b { color: var(--ink); font-weight: 600; }
 
 /* ---------- filters ---------- */
@@ -405,9 +411,9 @@ select {
   font-size: 0.8125rem;
   font-weight: 500;
   white-space: nowrap;
-  padding: 0.34rem 0.7rem;
+  padding: 0.36rem 0.72rem;
   border: 1px solid var(--field-border);
-  border-radius: 999px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--ink-2);
   cursor: pointer;
@@ -593,7 +599,7 @@ select {
   font-size: 0.75rem;
   color: var(--ink-2);
 }
-.rating__star { color: var(--accent); font-size: 0.8125rem; line-height: 1; }
+.rating__star { color: var(--accent); width: 13px; height: 13px; vertical-align: -0.1em; }
 .owned {
   display: inline-flex;
   align-items: center;
@@ -704,17 +710,20 @@ select {
 .includes { display: grid; gap: 0.45rem; }
 .includes li {
   display: grid;
-  grid-template-columns: 1.1rem 1fr;
-  gap: 0.55rem;
+  grid-template-columns: 1rem 1fr;
+  gap: 0.6rem;
   align-items: start;
   font-size: var(--step-0);
   color: var(--ink-2);
 }
 .includes li::before {
-  content: "✓";
-  color: var(--tick);
-  font-weight: 700;
-  line-height: 1.5;
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.16em;
+  background-color: var(--tick);
+  -webkit-mask: var(--icon-check) center / contain no-repeat;
+  mask: var(--icon-check) center / contain no-repeat;
 }
 
 .pages {
@@ -859,6 +868,14 @@ select {
   border-top: 1px solid var(--rule);
 }
 .seller .avatar { width: 2.6rem; height: 2.6rem; font-size: 0.875rem; }
+.seller__label {
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 0.15rem;
+}
 .seller__name { font-weight: 600; font-size: 0.875rem; }
 .seller__meta { font-size: 0.75rem; color: var(--ink-2); font-family: var(--mono); }
 
@@ -999,13 +1016,7 @@ select {
   background: color-mix(in srgb, var(--pen) 8%, transparent);
 }
 .demoflag b { color: var(--ink); font-weight: 600; display: block; }
-.demoflag__mark {
-  font-family: var(--mono);
-  font-weight: 700;
-  color: var(--pen);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
+.demoflag__mark { color: var(--pen); width: 17px; height: 17px; margin-top: 0.12em; }
 
 .formgrid { display: grid; gap: 0.9rem; }
 .formgrid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1108,7 +1119,7 @@ select {
   gap: 0.6rem;
   background: var(--ink);
   color: var(--paper);
-  border-radius: 999px;
+  border-radius: var(--radius);
   padding: 0.6rem 1.1rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -1228,8 +1239,17 @@ body.is-locked { overflow: hidden; }
   color: var(--pen);
   border-left: 3px solid var(--pen);
   padding-left: 0.6rem;
+  align-items: start;
 }
-.formerror::before { content: "!"; font-family: var(--mono); font-weight: 700; }
+.formerror::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.1em;
+  background-color: var(--pen);
+  -webkit-mask: var(--icon-alert) center / contain no-repeat;
+  mask: var(--icon-alert) center / contain no-repeat;
+}
 
 input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--pen); }
 
@@ -1327,7 +1347,14 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   gap: 0.6rem;
   color: var(--ink-2);
 }
-.prose__list li::before { content: "—"; color: var(--ink-3); }
+.prose__list li::before {
+  content: "";
+  width: 7px;
+  height: 1.5px;
+  margin-top: 0.72em;
+  border-radius: 1px;
+  background: var(--ink-3);
+}
 .prose__action { margin-top: 0.4rem; }
 
 .todo {
@@ -1392,7 +1419,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   gap: 1px;
   padding: 2px;
   border: 1px solid var(--rule);
-  border-radius: 999px;
+  border-radius: 8px;
   background: var(--surface);
   flex: none;
 }
@@ -1403,7 +1430,7 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
   height: 26px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: 5px;
   background: none;
   color: var(--ink-3);
   cursor: pointer;
@@ -1520,8 +1547,8 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
    Short, and every piece of it earns its place: a view announces that it
    changed, the cart badge acknowledges what you added, a bar chart draws
    itself once, and the theme cross-fades instead of snapping. Nothing here
-   starts from opacity 0 on page content, so the first painted frame — the
-   one a thumbnail or a shared link gets — is already the whole page. */
+   starts from opacity 0 on page content, so the first painted frame, the
+   one a thumbnail or a shared link gets, is already the whole page. */
 
 @keyframes view-in { from { transform: translateY(6px); } }
 @keyframes card-in { from { transform: translateY(11px); } }
