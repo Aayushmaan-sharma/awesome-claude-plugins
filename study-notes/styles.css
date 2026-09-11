@@ -92,7 +92,6 @@
 
 .icon { display: inline-block; flex: none; vertical-align: -0.16em; }
 
-
 /* Light: paper on a pale desk. Actions invert to ink-on-bone, the brass steps
    down to a bronze that clears 4.5:1 on both light grounds, and separation
    comes from shadow rather than from borders. */
@@ -319,56 +318,6 @@ select {
   text-align: center;
 }
 
-/* ---------- thesis band ---------- */
-
-.band {
-  border-bottom: 1px solid var(--rule);
-  background:
-    repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule-soft) 27px 28px);
-  background-position: 0 8px;
-}
-.band__inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  gap: 2.5rem;
-  padding-block: 2.4rem 2rem;
-  align-items: end;
-}
-.band h1 {
-  font-size: var(--step-4);
-  max-width: 19ch;
-}
-.band__lede {
-  margin-top: 0.9rem;
-  max-width: 46ch;
-  color: var(--ink-2);
-  font-size: var(--step-1);
-}
-.band__actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.3rem; }
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface);
-  overflow: hidden;
-}
-.stat { padding: 0.85rem 0.9rem; }
-.stat + .stat { border-left: 1px solid var(--rule); }
-.stat__num {
-  font-family: var(--mono);
-  font-size: 1.375rem;
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
-}
-.stat__label {
-  font-size: 0.75rem;
-  color: var(--ink-2);
-  margin-top: 0.1rem;
-}
-
 .notice {
   display: flex;
   gap: 0.6rem;
@@ -379,68 +328,112 @@ select {
   padding: 0.1rem 0 0.1rem 0.8rem;
   margin-top: 1.1rem;
 }
-.notice b { color: var(--ink-2); }
+.notice b { color: var(--ink-2); font-weight: 600; }
 .notice .icon { color: var(--ink-3); margin-top: 0.14em; }
-.notice b { color: var(--ink); font-weight: 600; }
 
-/* ---------- filters ---------- */
 
-.filters {
-  position: sticky;
-  top: var(--topbar-h, 57px);
-  z-index: 30;
-  background: color-mix(in srgb, var(--paper) 92%, transparent);
-  backdrop-filter: blur(8px);
+/* ---------- catalogue: facet rail beside the results ---------- */
+
+.page-head--catalogue { padding-block: 2rem 1.4rem; }
+.page-head--catalogue h1 { max-width: 20ch; }
+.page-head--catalogue > p { max-width: 62ch; }
+
+.catalogue {
+  display: grid;
+  grid-template-columns: 216px minmax(0, 1fr);
+  gap: 2.75rem;
+  align-items: start;
+  padding-block: 1.6rem 4rem;
+}
+
+.facets { position: sticky; top: calc(var(--topbar-h, 57px) + 1.2rem); }
+.facets__summary { display: none; }
+.facets__body { display: grid; gap: 1.6rem; }
+
+.facet__head {
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   border-bottom: 1px solid var(--rule);
-  padding-block: 0.7rem;
 }
-.filters__inner { display: flex; align-items: center; gap: 0.75rem; }
-.chips {
+.facet ul { display: grid; gap: 1px; }
+
+.facet__item {
   display: flex;
-  gap: 0.35rem;
-  padding-right: 0.5rem;
-  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
-  overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: thin;
-  flex: 1 1 auto;
-  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  width: 100%;
+  font-family: var(--body);
+  font-size: 0.875rem;
+  text-align: left;
+  text-decoration: none;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 0.42rem 0.6rem;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease;
 }
-.chip {
+.facet__item:hover { background: var(--surface); color: var(--ink); }
+.facet__item[aria-current="page"],
+.facet__item[aria-pressed="true"] {
+  background: var(--surface);
+  border-left-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+.facet__item[data-empty="true"] { color: var(--ink-3); }
+.facet__count {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.facet__item[aria-current="page"] .facet__count,
+.facet__item[aria-pressed="true"] .facet__count { color: var(--ink-2); }
+
+.facets__clear {
+  justify-self: start;
   font-family: var(--body);
   font-size: 0.8125rem;
-  font-weight: 500;
-  white-space: nowrap;
-  padding: 0.36rem 0.72rem;
-  border: 1px solid var(--field-border);
-  border-radius: var(--radius);
-  background: transparent;
   color: var(--ink-2);
+  background: none;
+  border: 0;
+  padding: 0.2rem 0;
   cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
-.chip:hover { border-color: var(--ink-3); color: var(--ink); }
-.chip[aria-pressed="true"] {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
-}
-.filters__right { display: flex; gap: 0.5rem; flex: none; align-items: center; }
-.filters__right select { width: auto; font-size: 0.8125rem; padding-block: 0.42rem; }
+.facets__clear:hover { color: var(--ink); }
 
-.resultline {
+.results__head {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: baseline;
   gap: 1rem;
-  padding-block: 1.4rem 0.9rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--rule);
 }
-.resultline__count { font-size: 0.8125rem; color: var(--ink-2); }
+.results__count { font-size: 0.875rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.results__sort { display: flex; align-items: center; gap: 0.5rem; }
+.results__sort label { font-size: 0.75rem; color: var(--ink-3); }
+.results__sort select { width: auto; font-size: 0.8125rem; padding-block: 0.42rem; }
 
 /* ---------- grid + note card ---------- */
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
   gap: 1.1rem;
   padding-bottom: 3rem;
 }
@@ -1075,21 +1068,6 @@ select {
 .payout__row { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .payout__row--sum { border-top: 1px solid var(--rule); padding-top: 0.5rem; font-weight: 600; color: var(--ink); }
 
-.salesgrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.9rem;
-  padding-block: 1.4rem 0.5rem;
-}
-.tile {
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 0.9rem;
-}
-.tile__num { font-family: var(--mono); font-size: 1.5rem; font-weight: 600; letter-spacing: -0.03em; }
-.tile__label { font-size: 0.75rem; color: var(--ink-2); }
-
 .table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
 .table th {
   text-align: left;
@@ -1138,7 +1116,6 @@ select {
 .footer__inner { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; }
 .footer strong { color: var(--ink); }
 
-
 /* ---------- skip link + scroll lock ---------- */
 
 .skiplink {
@@ -1169,7 +1146,7 @@ body.is-locked { overflow: hidden; }
 
 .card__tags { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
 .detail__tags { margin-bottom: 0.9rem; }
-.resultline h2 { font-size: var(--step-2); }
+
 .empty__action { margin-top: 1rem; }
 .empty--page { margin-block: 4rem; }
 .empty--page h1 { font-size: var(--step-3); margin-bottom: 0.4rem; }
@@ -1410,8 +1387,6 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 .footer__links a:hover { color: var(--ink); text-decoration: underline; }
 .footer__notes { display: grid; gap: 0.4rem; font-size: 0.8125rem; }
 
-
-
 /* ---------- theme control ---------- */
 
 .themectl {
@@ -1542,7 +1517,6 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 .empty--chart { margin-top: 2rem; }
 
-
 /* ---------- motion ----------
    Short, and every piece of it earns its place: a view announces that it
    changed, the cart badge acknowledges what you added, a bar chart draws
@@ -1591,9 +1565,24 @@ input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--
 }
 
 @media (max-width: 900px) {
-  .band__inner { grid-template-columns: minmax(0, 1fr); gap: 1.6rem; align-items: start; }
+  
   .detail__grid, .sell__grid { grid-template-columns: minmax(0, 1fr); gap: 1.8rem; }
   .buypanel, .preview-sticky { position: static; }
+  .catalogue { grid-template-columns: minmax(0, 1fr); gap: 1.4rem; }
+  .facets { position: static; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); }
+  .facets__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .facets__state { font-family: var(--mono); font-size: 0.75rem; color: var(--ink-3); font-weight: 400; }
+  .facets[open] .facets__summary { border-bottom: 1px solid var(--rule); }
+  .facets__body { padding: 1rem 0.9rem 1.1rem; }
   .balance { grid-template-columns: minmax(0, 1fr); gap: 1.4rem; align-items: start; }
   .policy__grid { grid-template-columns: minmax(0, 1fr); gap: 1.6rem; }
   .policy__nav { position: static; }

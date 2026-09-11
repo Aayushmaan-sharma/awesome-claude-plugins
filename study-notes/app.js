@@ -112,7 +112,6 @@
   const state = {
     ...readStore(),
     query: "",
-    subject: "all",
     level: "all",
     sort: "newest",
     route: { name: "browse", id: null },
@@ -246,17 +245,35 @@
   }
   const hasReviewed = (id) => state.reviews.some((r) => r.noteId === id);
 
+  /* The subject is part of the URL, so a subject page can be linked and
+   * shared. Level, sort and search refine what is already on screen and stay
+   * in memory, which is how a catalogue usually splits the two. */
+  const activeSubject = () => (state.route.name === "browse" && state.route.id ? state.route.id : "all");
+
+  function matchesNote(note, { subject, level, q }) {
+    if (subject && subject !== "all" && note.subject !== subject) return false;
+    if (level && level !== "all" && note.level !== level) return false;
+    if (!q) return true;
+    return [note.title, note.course, note.institution, subjectName(note.subject), note.level, note.summary, note.seller?.name]
+      .join(" ")
+      .toLowerCase()
+      .includes(q);
+  }
+
+  const searchTerm = () => state.query.trim().toLowerCase();
+
+  /* Each facet is counted against the other filters, not against the whole
+   * catalogue, so a count of 4 always means four results when clicked. */
+  function facetCounts(key, fixed) {
+    const counts = new Map();
+    for (const note of allNotes()) {
+      if (matchesNote(note, { ...fixed, q: searchTerm() })) counts.set(note[key], (counts.get(note[key]) || 0) + 1);
+    }
+    return counts;
+  }
+
   function filtered() {
-    const q = state.query.trim().toLowerCase();
-    const list = allNotes().filter((n) => {
-      if (state.subject !== "all" && n.subject !== state.subject) return false;
-      if (state.level !== "all" && n.level !== state.level) return false;
-      if (!q) return true;
-      return [n.title, n.course, n.institution, subjectName(n.subject), n.level, n.summary, n.seller?.name]
-        .join(" ")
-        .toLowerCase()
-        .includes(q);
-    });
+    const list = allNotes().filter((n) => matchesNote(n, { subject: activeSubject(), level: state.level, q: searchTerm() }));
     const by = {
       newest: null, // catalogue order: listings published here sit at the front
       rating: (a, b) => ratingFor(b.id).avg - ratingFor(a.id).avg,
@@ -408,7 +425,10 @@
       <div id="toast-host" role="status" aria-live="polite"></div>`;
 
     measureChrome();
-    window.addEventListener("resize", measureChrome);
+    window.addEventListener("resize", () => {
+      measureChrome();
+      syncFacets();
+    });
 
     $("#q").addEventListener("input", (e) => {
       state.query = e.target.value;
@@ -428,6 +448,15 @@
       <rect x="7.4" y="10" width="9.2" height="2" rx="1" fill="var(--paper)"></rect>
       <rect x="7.4" y="14.8" width="6" height="2" rx="1" fill="var(--paper)"></rect>
     </svg>`;
+
+  const isWide = () => !window.matchMedia || window.matchMedia("(min-width: 900px)").matches;
+
+  /* The facet list is a sidebar on a wide screen and a disclosure on a narrow
+   * one. Same markup either way; only whether it starts open differs. */
+  function syncFacets() {
+    const facets = $("#facets");
+    if (facets && isWide()) facets.open = true;
+  }
 
   /* Sticky offsets follow the real height of the bar, which changes when the
    * nav wraps on a narrow screen. */
@@ -576,81 +605,114 @@
 
   /* ------------------------------------------------------------- browse view */
 
+  const listJoin = (items) =>
+    items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+
   function browseView() {
     const notes = filtered();
-    const total = allNotes().length;
-    const subjectsUsed = new Set(allNotes().map((n) => n.subject)).size;
-    const levelsUsed = new Set(allNotes().map((n) => n.level)).size;
+    const subject = activeSubject();
+    const subjectCounts = facetCounts("subject", { level: state.level });
+    /* "All subjects" counts what removing only the subject filter would show,
+     * so it agrees with the numbers beneath it whatever else is active. */
+    const allCount = [...subjectCounts.values()].reduce((a, b) => a + b, 0);
+      const levelCounts = facetCounts("level", { subject });
+    const filtersOn = subject !== "all" || state.level !== "all" || Boolean(state.query.trim());
 
-    const chips = [{ id: "all", name: "All subjects" }, ...SUBJECTS]
-      .map(
-        (s) =>
-          `<button class="chip" type="button" data-action="subject" data-value="${esc(s.id)}" aria-pressed="${state.subject === s.id}">${esc(s.name)}</button>`,
-      )
+    const subjectItems = SUBJECTS.map((s) => {
+      const count = subjectCounts.get(s.id) || 0;
+      return `<li><a class="facet__item" href="#/s/${esc(s.id)}" data-nav${subject === s.id ? ' aria-current="page"' : ""}${count ? "" : ' data-empty="true"'}>
+        <span>${esc(s.name)}</span><span class="facet__count">${count}</span></a></li>`;
+    }).join("");
+
+    const levelItems = [{ id: "all", name: "Any level" }, ...LEVELS.map((l) => ({ id: l, name: l }))]
+      .map((l) => {
+        const count = l.id === "all" ? [...levelCounts.values()].reduce((a, b) => a + b, 0) : levelCounts.get(l.id) || 0;
+        return `<li><button class="facet__item" type="button" data-action="level" data-value="${esc(l.id)}" aria-pressed="${state.level === l.id}">
+          <span>${esc(l.name)}</span><span class="facet__count">${count}</span></button></li>`;
+      })
       .join("");
 
+    const head =
+      subject === "all"
+        ? `<h1>Buy and sell modern-languages study notes.</h1>
+           <p>Vocabulary decks, grammar tables, speaking answers, and notes on the set films and texts, written by students who took the course. Sellers keep ${100 - CONFIG.platformFeePct}% of what a buyer pays. Buyers download the file at checkout.</p>`
+        : `<h1>${esc(subjectName(subject))}</h1>
+           <p>${
+             notes.length
+               ? `Available at ${esc(listJoin(LEVELS.filter((l) => notes.some((n) => n.level === l))))}.`
+               : "Nothing matches the filters you have set."
+           }</p>`;
+
     return `
-      <section class="band">
-        <div class="shell band__inner">
-          <div>
-            <p class="eyebrow">GCSE · A-Level · IB · Degree</p>
-            <h1>Buy and sell modern-languages study notes.</h1>
-            <p class="band__lede">Vocabulary decks, grammar tables, speaking answers, and notes on the set films and texts, written by students who took the course. Sellers keep ${100 - CONFIG.platformFeePct}% of what a buyer pays. Buyers download the file at checkout.</p>
-            <div class="band__actions">
-              <a class="btn btn--primary" href="#/sell" data-nav>List your notes</a>
-              <a class="btn btn--ghost" href="#/library" data-nav>Go to your library</a>
-            </div>
-          </div>
-          <div>
-            <div class="stats">
-              <div class="stat"><p class="stat__num">${total}</p><p class="stat__label">Note packs listed</p></div>
-              <div class="stat"><p class="stat__num">${subjectsUsed}</p><p class="stat__label">Subjects covered</p></div>
-              <div class="stat"><p class="stat__num">${levelsUsed}</p><p class="stat__label">Levels covered</p></div>
-            </div>
-            <div class="notice">
-              ${icon("info")}
-              <p><b>Sample catalogue.</b> These listings are examples so the shop opens in a working state. Payments aren't connected, so checkout records the order and unlocks the download.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="filters" aria-label="Filter and sort">
-        <div class="shell filters__inner">
-          <div class="chips" role="group" aria-label="Filter by subject">${chips}</div>
-          <div class="filters__right">
-            <label class="sr-only" for="level">Filter by level</label>
-            <select id="level" data-action="level">
-              <option value="all"${state.level === "all" ? " selected" : ""}>Any level</option>
-              ${LEVELS.map((l) => `<option value="${esc(l)}"${state.level === l ? " selected" : ""}>${esc(l)}</option>`).join("")}
-            </select>
-            <label class="sr-only" for="sort">Sort listings</label>
-            <select id="sort" data-action="sort">
-              <option value="newest"${state.sort === "newest" ? " selected" : ""}>Newest first</option>
-              <option value="rating"${state.sort === "rating" ? " selected" : ""}>Highest rated</option>
-              <option value="reviewed"${state.sort === "reviewed" ? " selected" : ""}>Most reviewed</option>
-              <option value="price-asc"${state.sort === "price-asc" ? " selected" : ""}>Price: low to high</option>
-              <option value="price-desc"${state.sort === "price-desc" ? " selected" : ""}>Price: high to low</option>
-            </select>
-          </div>
-        </div>
-      </section>
-
       <div class="shell">
-        <div class="resultline">
-          <h2>${state.subject === "all" ? "All notes" : esc(subjectName(state.subject))}</h2>
-          <p class="resultline__count">${notes.length} of ${total}${state.query ? ` matching “${esc(state.query)}”` : ""}</p>
-        </div>
-        <div class="grid">
+        <div class="page-head page-head--catalogue">
+          <p class="eyebrow">${subject === "all" ? "GCSE · A-Level · IB · Degree" : "Subject"}</p>
+          ${head}
           ${
-            notes.length
-              ? notes.map(cardMarkup).join("")
-              : `<div class="empty">
-                   <h3>Nothing matches that yet</h3>
-                   <p>Try a broader subject, or clear the search. If you wrote these notes, list them yourself.</p>
-                   <p class="empty__action"><a class="btn btn--primary" href="#/sell" data-nav>List your notes</a></p>
+            subject === "all"
+              ? `<div class="notice">
+                   ${icon("info")}
+                   <p><b>Sample catalogue.</b> These listings are examples so the shop opens in a working state. Payments aren't connected, so checkout records the order and unlocks the download.</p>
                  </div>`
+              : ""
           }
+        </div>
+
+        <div class="catalogue">
+          <details class="facets" id="facets"${isWide() ? " open" : ""}>
+            <summary class="facets__summary">
+              <span>Filters</span>
+              <span class="facets__state">${filtersOn ? "Narrowed" : "All notes"}</span>
+            </summary>
+            <div class="facets__body">
+              <nav class="facet" aria-label="Subjects">
+                <h2 class="facet__head">Subject</h2>
+                <ul>
+                  <li><a class="facet__item" href="#/" data-nav${subject === "all" ? ' aria-current="page"' : ""}>
+                    <span>All subjects</span><span class="facet__count">${allCount}</span></a></li>
+                  ${subjectItems}
+                </ul>
+              </nav>
+              <div class="facet">
+                <h2 class="facet__head" id="level-head">Level</h2>
+                <ul role="group" aria-labelledby="level-head">${levelItems}</ul>
+              </div>
+              ${
+                filtersOn
+                  ? `<button class="facets__clear" type="button" data-action="clear-filters">Clear filters</button>`
+                  : ""
+              }
+            </div>
+          </details>
+
+          <section class="results" aria-label="Note packs">
+            <div class="results__head">
+              <p class="results__count">${notes.length} ${notes.length === 1 ? "pack" : "packs"}${
+                state.query.trim() ? ` matching “${esc(state.query.trim())}”` : ""
+              }</p>
+              <div class="results__sort">
+                <label for="sort">Sort</label>
+                <select id="sort" data-action="sort">
+                  <option value="newest"${state.sort === "newest" ? " selected" : ""}>Newest first</option>
+                  <option value="rating"${state.sort === "rating" ? " selected" : ""}>Highest rated</option>
+                  <option value="reviewed"${state.sort === "reviewed" ? " selected" : ""}>Most reviewed</option>
+                  <option value="price-asc"${state.sort === "price-asc" ? " selected" : ""}>Price: low to high</option>
+                  <option value="price-desc"${state.sort === "price-desc" ? " selected" : ""}>Price: high to low</option>
+                </select>
+              </div>
+            </div>
+            <div class="grid">
+              ${
+                notes.length
+                  ? notes.map(cardMarkup).join("")
+                  : `<div class="empty">
+                       <h3>Nothing here yet</h3>
+                       <p>No pack matches those filters. Try a different subject or level, or clear the search.</p>
+                       <p class="empty__action"><button class="btn btn--primary" type="button" data-action="clear-filters">Clear filters</button></p>
+                     </div>`
+              }
+            </div>
+          </section>
         </div>
       </div>`;
   }
@@ -1754,6 +1816,7 @@
     const hash = location.hash.replace(/^#\/?/, "");
     const [head, id] = hash.split("/");
     if (head === "note" && id) return { name: "note", id };
+    if (head === "s" && id) return { name: "browse", id };
     if (head === "policy" && id) return { name: "policy", id };
     if (head === "dashboard") return { name: "earnings", id: null }; // old link
     if (["sell", "library", "earnings", "signin"].includes(head)) return { name: head, id: null };
@@ -1910,9 +1973,16 @@
       case "back":
         location.hash = "#/";
         break;
-      case "subject":
-        state.subject = el.dataset.value;
+      case "level":
+        state.level = el.dataset.value;
         renderView();
+        break;
+      case "clear-filters":
+        state.level = "all";
+        state.query = "";
+        if ($("#q")) $("#q").value = "";
+        if (activeSubject() === "all") renderView();
+        else location.hash = "#/";
         break;
       default:
         break;
@@ -1922,9 +1992,10 @@
   document.addEventListener("change", (event) => {
     const el = event.target.closest("[data-action]");
     if (!el) return;
-    if (el.dataset.action === "level") state.level = el.value;
-    if (el.dataset.action === "sort") state.sort = el.value;
-    if (["level", "sort"].includes(el.dataset.action)) renderView();
+    if (el.dataset.action === "sort") {
+      state.sort = el.value;
+      renderView();
+    }
   });
 
   document.addEventListener("keydown", (event) => {
