@@ -1,4 +1,4 @@
-# Studyshelf, a storefront for selling study notes
+# MFL Centre, a storefront for selling study notes
 
 A self-contained shop for student-written study notes across twenty subjects,
 from languages and sciences to humanities and law. No build step, no framework,
@@ -49,7 +49,7 @@ node build-artifact.mjs          # -> dist/artifact.html (single file, fonts inl
   Artifacts viewer owns; "match system" follows both that host stamp and
   `prefers-color-scheme`, live.
 
-State lives in `localStorage` under `studyshelf.v1` and never leaves the device.
+State lives in `localStorage` under `mflcentre.v1` and never leaves the device.
 
 ## Before you go live
 

@@ -1,4 +1,4 @@
-/* Studyshelf sample catalogue.
+/* MFL Centre sample catalogue.
  *
  * Example inventory so the storefront opens in a working state. Replace
  * SAMPLE_NOTES with your own listings, or load them from your backend in

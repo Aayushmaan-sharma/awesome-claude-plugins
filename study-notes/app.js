@@ -1,4 +1,4 @@
-/* Studyshelf, a storefront for buying and selling study notes.
+/* MFL Centre, a storefront for buying and selling study notes.
  *
  * No build step, no framework, no dependencies, and no network requests:
  * the fonts are served from this directory and there is no analytics,
@@ -38,7 +38,7 @@
   };
 
   const CONFIG = {
-    shopName: "Studyshelf",
+    shopName: "MFL Centre",
     locale: "en-GB",
     currency: "GBP",
     platformFeePct: 15,
@@ -46,7 +46,7 @@
     promos: { FRESHERS10: { pct: 10, label: "Freshers' week, 10% off" } },
   };
 
-  const STORE_KEY = "studyshelf.v1";
+  const STORE_KEY = "mflcentre.v1";
 
   /* ---------------------------------------------------------------- utils */
 
@@ -399,7 +399,7 @@
         <div class="shell topbar__inner">
           <a class="brand" href="#/" data-nav aria-label="${esc(CONFIG.shopName)} home">
             ${logoMarkup()}
-            <span class="brand__word"><span class="brand__a">study</span><span class="brand__b">shelf</span></span>
+            <span class="brand__word"><span class="brand__a">mfl</span><span class="brand__b">centre</span></span>
           </a>
           <div class="searchbar">
             <label class="sr-only" for="q">Search notes</label>
