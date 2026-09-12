@@ -22,7 +22,7 @@
   font-display: swap;
 }
 
-/* MFL Centre study notes marketplace
+/* Studyshelf study notes marketplace
    A desk with white paper on it, and as little colour as the job needs. The
    one accent is a muted brass used at small sizes; marker yellow appears only
    on the paper, where a highlighter belongs.
@@ -346,7 +346,15 @@ select {
   padding-block: 1.6rem 4rem;
 }
 
-.facets { position: sticky; top: calc(var(--topbar-h, 57px) + 1.2rem); }
+.facets {
+  position: sticky;
+  top: calc(var(--topbar-h, 57px) + 1.2rem);
+  max-height: calc(100vh - var(--topbar-h, 57px) - 3rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding-right: 0.3rem;
+}
 .facets__summary { display: none; }
 .facets__body { display: grid; gap: 1.6rem; }
 
@@ -362,6 +370,15 @@ select {
   border-bottom: 1px solid var(--rule);
 }
 .facet ul { display: grid; gap: 1px; }
+.facet__group + .facet__group { margin-top: 0.9rem; }
+.facet__grouphead {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-3);
+  padding: 0 0.6rem 0.25rem;
+  margin-top: 0.55rem;
+}
+.facet__group > ul { gap: 1px; }
 
 .facet__item {
   display: flex;

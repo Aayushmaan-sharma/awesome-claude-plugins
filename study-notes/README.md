@@ -1,15 +1,14 @@
-# MFL Centre — a storefront for selling study notes
+# Studyshelf, a storefront for selling study notes
 
-A self-contained shop for modern-languages study notes — vocabulary decks,
-grammar tables, speaking answers, and notes on set films and texts. No build
-step, no framework, no dependencies, and no network requests: open `index.html`
-and it runs.
+A self-contained shop for student-written study notes across twenty subjects,
+from languages and sciences to humanities and law. No build step, no framework,
+no dependencies, and no network requests: open `index.html` and it runs.
 
 ```
 study-notes/
 ├── index.html          page shell
 ├── styles.css          design tokens + components (single dark theme)
-├── catalog.js          sample catalogue (French, German, Spanish, …) — replace it
+├── catalog.js          sample catalogue, grouped into subjects, replace it
 ├── policies.js         terms, privacy, refunds, cookies, accessibility, copyright
 ├── app.js              storefront logic — SITE config lives at the top
 ├── fonts/              self-hosted OFL typefaces (+ OFL.txt)
@@ -50,7 +49,7 @@ node build-artifact.mjs          # -> dist/artifact.html (single file, fonts inl
   Artifacts viewer owns; "match system" follows both that host stamp and
   `prefers-color-scheme`, live.
 
-State lives in `localStorage` under `mflcentre.v1` and never leaves the device.
+State lives in `localStorage` under `studyshelf.v1` and never leaves the device.
 
 ## Before you go live
 

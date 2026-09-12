@@ -1,4 +1,4 @@
-/* MFL Centre, a storefront for buying and selling study notes.
+/* Studyshelf, a storefront for buying and selling study notes.
  *
  * No build step, no framework, no dependencies, and no network requests:
  * the fonts are served from this directory and there is no analytics,
@@ -38,7 +38,7 @@
   };
 
   const CONFIG = {
-    shopName: "MFL Centre",
+    shopName: "Studyshelf",
     locale: "en-GB",
     currency: "GBP",
     platformFeePct: 15,
@@ -46,7 +46,7 @@
     promos: { FRESHERS10: { pct: 10, label: "Freshers' week, 10% off" } },
   };
 
-  const STORE_KEY = "mflcentre.v1";
+  const STORE_KEY = "studyshelf.v1";
 
   /* ---------------------------------------------------------------- utils */
 
@@ -399,11 +399,11 @@
         <div class="shell topbar__inner">
           <a class="brand" href="#/" data-nav aria-label="${esc(CONFIG.shopName)} home">
             ${logoMarkup()}
-            <span class="brand__word"><span class="brand__a">mfl</span><span class="brand__b">centre</span></span>
+            <span class="brand__word"><span class="brand__a">study</span><span class="brand__b">shelf</span></span>
           </a>
           <div class="searchbar">
             <label class="sr-only" for="q">Search notes</label>
-            <input id="q" type="search" placeholder="Search by language, exam board or topic" autocomplete="off">
+            <input id="q" type="search" placeholder="Search by subject, exam board or topic" autocomplete="off">
           </div>
           <nav class="navlinks" aria-label="Main">
             <a class="navlink" href="#/" data-nav data-route="browse">Browse</a>
@@ -437,13 +437,14 @@
     });
   }
 
-  /* The mark: a white sheet of notes with an acute accent over it. The page,
-   * because that is what the site sells and what it is made of; the accent,
-   * because a diacritic is what says modern languages. Four flat shapes, so
-   * the silhouette still reads at 16px. Colours come from the palette. */
+  /* The mark: a sheet of notes with an index tab on it. The page, because
+   * that is what the site sells and what the design is made of; the tab,
+   * because the shop is now sorted into twenty subjects and a tab is what
+   * says filed. Four flat shapes, so the silhouette still reads at 16px.
+   * Colours come from the palette. */
   const logoMarkup = () => `
     <svg class="brand__mark" viewBox="0 0 24 24" width="30" height="30" aria-hidden="true" focusable="false">
-      <path class="brand__accent" d="M15.9 0.6 H18.9 L14.5 4.2 H12.1 Z" fill="var(--accent)"></path>
+      <rect class="brand__accent" x="12.9" y="1.5" width="6.3" height="5.2" rx="1.2" fill="var(--accent)"></rect>
       <rect x="4.8" y="4.8" width="14.4" height="17.6" rx="2" fill="var(--ink)"></rect>
       <rect x="7.4" y="10" width="9.2" height="2" rx="1" fill="var(--paper)"></rect>
       <rect x="7.4" y="14.8" width="6" height="2" rx="1" fill="var(--paper)"></rect>
@@ -471,7 +472,7 @@
         <div class="shell footer__grid">
           <div>
             <p class="footer__brand">${esc(CONFIG.shopName)}</p>
-            <p>A marketplace for student-written notes in modern foreign languages. Sellers keep ${100 - CONFIG.platformFeePct}% of each sale.</p>
+            <p>A marketplace for student-written study notes. Sellers keep ${100 - CONFIG.platformFeePct}% of each sale.</p>
             <p class="footer__legal">
               ${siteValue("legalName")} · Company number ${siteValue("companyNumber")} · VAT ${siteValue("vatNumber")}<br>
               ${siteValue("address")}<br>
@@ -618,10 +619,19 @@
       const levelCounts = facetCounts("level", { subject });
     const filtersOn = subject !== "all" || state.level !== "all" || Boolean(state.query.trim());
 
-    const subjectItems = SUBJECTS.map((s) => {
+    const subjectLink = (s) => {
       const count = subjectCounts.get(s.id) || 0;
       return `<li><a class="facet__item" href="#/s/${esc(s.id)}" data-nav${subject === s.id ? ' aria-current="page"' : ""}${count ? "" : ' data-empty="true"'}>
         <span>${esc(s.name)}</span><span class="facet__count">${count}</span></a></li>`;
+    };
+
+    const subjectItems = SUBJECT_GROUPS.map((group) => {
+      const inGroup = SUBJECTS.filter((s) => s.group === group);
+      if (!inGroup.length) return "";
+      return `<li class="facet__group">
+        <p class="facet__grouphead">${esc(group)}</p>
+        <ul>${inGroup.map(subjectLink).join("")}</ul>
+      </li>`;
     }).join("");
 
     const levelItems = [{ id: "all", name: "Any level" }, ...LEVELS.map((l) => ({ id: l, name: l }))]
@@ -634,8 +644,8 @@
 
     const head =
       subject === "all"
-        ? `<h1>Buy and sell modern-languages study notes.</h1>
-           <p>Vocabulary decks, grammar tables, speaking answers, and notes on the set films and texts, written by students who took the course. Sellers keep ${100 - CONFIG.platformFeePct}% of what a buyer pays. Buyers download the file at checkout.</p>`
+        ? `<h1>Buy and sell student-written study notes.</h1>
+           <p>Revision notes, worked solutions, essay plans, case grids and vocabulary decks across ${SUBJECTS.length} subjects, written by students who took the course. Sellers keep ${100 - CONFIG.platformFeePct}% of what a buyer pays. Buyers download the file at checkout.</p>`
         : `<h1>${esc(subjectName(subject))}</h1>
            <p>${
              notes.length
